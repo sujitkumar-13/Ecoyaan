@@ -6,6 +6,7 @@ import { CartProvider } from "@/context/CartContext";
 import { getCartData } from "@/lib/api";
 import { Header } from "@/components/Header";
 import { MobileNavBar } from "@/components/MobileNavBar";
+import { Footer } from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,9 +41,7 @@ export default async function RootLayout({
             {children}
           </main>
           <MobileNavBar />
-          <footer className="bg-stone-100 py-6 text-center text-stone-500 text-sm mt-auto hidden md:block">
-            © {new Date().getFullYear()} Ecoyaan Checkout MVC. All rights reserved.
-          </footer>
+          <Footer />
         </CartProvider>
       </body>
     </html>
