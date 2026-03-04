@@ -9,7 +9,7 @@ export function Header() {
     const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
     return (
-        <header className="bg-transparent py-4 md:py-5 px-4 md:px-8 z-50 w-full">
+        <header className="sticky top-0 bg-white py-4 md:py-5 px-4 md:px-8 z-50 w-full shadow-sm transition-all duration-300">
             <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-5 md:gap-10">
 
                 {/* Logo Section */}
