@@ -29,13 +29,13 @@ export default async function RootLayout({
   const initialCartData = await getCartData();
 
   return (
-    <html lang="en">
+    <html lang="en" className="bg-stone-50">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-stone-50 text-stone-900 flex flex-col min-h-screen`}
       >
         <CartProvider initialData={initialCartData}>
           <Header />
-          <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-8">
+          <main className="flex-1 w-full mx-auto p-4 md:p-8">
             {children}
           </main>
           <footer className="bg-stone-100 py-6 text-center text-stone-500 text-sm mt-auto">
