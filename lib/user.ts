@@ -72,6 +72,22 @@ export const mockOrders: Order[] = [
             }
         ],
         shippingAddress: mockUser.addresses[0]
+    },
+    {
+        id: "ORD-87122",
+        date: "Dec 05, 2023",
+        status: "Delivered",
+        total: 899,
+        items: [
+            {
+                product_id: 104,
+                product_name: "Eco-Friendly Yoga Mat",
+                product_price: 899,
+                quantity: 1,
+                image: "/mat.jpeg"
+            }
+        ],
+        shippingAddress: mockUser.addresses[1]
     }
 ];
 

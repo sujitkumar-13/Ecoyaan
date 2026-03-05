@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
 import { getUser, getOrders } from "@/lib/user";
 import {
     User as UserIcon,
@@ -15,13 +16,35 @@ import {
     CreditCard,
     Star,
     Bell,
-    ExternalLink
+    ExternalLink,
+    X,
+    Plus,
+    Trash2,
+    Edit3
 } from "lucide-react";
 
 export default function ProfilePage() {
-    const user = getUser();
+    const [userProfile, setUserProfile] = useState(getUser());
     const orders = getOrders();
+    const router = useRouter();
+    const { addToCart } = useCart();
     const [activeTab, setActiveTab] = useState<"overview" | "orders" | "addresses" | "settings">("overview");
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [editingAddress, setEditingAddress] = useState<any>(null);
+    const [orderFilter, setOrderFilter] = useState("All Orders");
+
+    const filteredOrders = orders.filter(order => {
+        if (orderFilter === "All Orders") return true;
+        if (orderFilter === "Past 3 Months") {
+            // Mock logic: Jan, Feb, Mar are "Past 3 Months" in our March 2024 context
+            return order.date.includes("2024") && (order.date.includes("Jan") || order.date.includes("Feb") || order.date.includes("Mar"));
+        }
+        if (orderFilter === "2023") {
+            return order.date.includes("2023");
+        }
+        return true;
+    });
 
     const tabs = [
         { id: "overview", label: "Overview", icon: UserIcon },
@@ -30,8 +53,53 @@ export default function ProfilePage() {
         { id: "settings", label: "Settings", icon: Settings },
     ];
 
+    const handleSaveProfile = (updatedData: { name: string; email: string; phone: string }) => {
+        setUserProfile(prev => ({
+            ...prev,
+            ...updatedData
+        }));
+        setIsEditModalOpen(false);
+    };
+
+    const handleSaveAddress = (addressData: any) => {
+        if (editingAddress) {
+            setUserProfile(prev => ({
+                ...prev,
+                addresses: prev.addresses.map(a => a.id === editingAddress.id ? { ...addressData, id: a.id } : a)
+            }));
+        } else {
+            // Generate a string ID like "addr_N"
+            const maxId = userProfile.addresses.reduce((max, addr) => {
+                const num = parseInt(addr.id.split('_')[1]);
+                return isNaN(num) ? max : Math.max(max, num);
+            }, 0);
+            const newAddress = {
+                ...addressData,
+                id: `addr_${maxId + 1}`,
+            };
+            setUserProfile(prev => ({
+                ...prev,
+                addresses: [...prev.addresses, newAddress]
+            }));
+        }
+        setIsAddressModalOpen(false);
+        setEditingAddress(null);
+    };
+
+    const handleRemoveAddress = (id: string) => {
+        setUserProfile(prev => ({
+            ...prev,
+            addresses: prev.addresses.filter(a => a.id !== id)
+        }));
+    };
+
+    const handleEditAddress = (address: any) => {
+        setEditingAddress(address);
+        setIsAddressModalOpen(true);
+    };
+
     return (
-        <div className="max-w-[1200px] mx-auto pb-8 px-4 md:px-0">
+        <div className="max-w-[1200px] mx-auto pb-8 px-4 md:px-0 relative">
             <h1 className="text-3xl font-black text-stone-900 mb-8 tracking-tight">My Account</h1>
 
             <div className="flex flex-col lg:flex-row gap-8 items-start">
@@ -40,8 +108,8 @@ export default function ProfilePage() {
                     <div className="p-6 bg-stone-50/50 border-b border-stone-100 flex flex-col items-center text-center">
                         <div className="relative group mb-4">
                             <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-md bg-green-100 flex items-center justify-center">
-                                {user.avatar ? (
-                                    <Image src={user.avatar} alt={user.name} width={80} height={80} className="object-cover" />
+                                {userProfile.avatar ? (
+                                    <Image src={userProfile.avatar} alt={userProfile.name} width={80} height={80} className="object-cover" />
                                 ) : (
                                     <UserIcon className="w-8 h-8 text-green-600" />
                                 )}
@@ -50,8 +118,8 @@ export default function ProfilePage() {
                                 <Camera className="w-4 h-4" />
                             </button>
                         </div>
-                        <h2 className="font-bold text-stone-900">{user.name}</h2>
-                        <p className="text-xs text-stone-400 font-medium">Member since {user.joinedAt}</p>
+                        <h2 className="font-bold text-stone-900">{userProfile.name}</h2>
+                        <p className="text-xs text-stone-400 font-medium">Member since {userProfile.joinedAt}</p>
                     </div>
 
                     <nav className="p-3">
@@ -162,24 +230,29 @@ export default function ProfilePage() {
                             <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm p-8">
                                 <div className="flex items-center justify-between mb-8">
                                     <h3 className="font-black text-stone-900 text-lg">Personal Information</h3>
-                                    <button className="text-xs font-bold bg-stone-100 text-stone-600 px-4 py-2 rounded-xl hover:bg-stone-200 transition-colors">Edit Profile</button>
+                                    <button
+                                        onClick={() => setIsEditModalOpen(true)}
+                                        className="text-xs font-bold bg-stone-100 text-stone-600 px-4 py-2 rounded-xl hover:bg-stone-200 transition-colors"
+                                    >
+                                        Edit Profile
+                                    </button>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Full Name</label>
-                                        <p className="font-bold text-stone-900">{user.name}</p>
+                                        <p className="font-bold text-stone-900">{userProfile.name}</p>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Email Address</label>
-                                        <p className="font-bold text-stone-900">{user.email}</p>
+                                        <p className="font-bold text-stone-900">{userProfile.email}</p>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Phone Number</label>
-                                        <p className="font-bold text-stone-900">{user.phone}</p>
+                                        <p className="font-bold text-stone-900">{userProfile.phone}</p>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Date Joined</label>
-                                        <p className="font-bold text-stone-900">{user.joinedAt}</p>
+                                        <p className="font-bold text-stone-900">{userProfile.joinedAt}</p>
                                     </div>
                                 </div>
                             </div>
@@ -192,7 +265,11 @@ export default function ProfilePage() {
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-2xl font-black text-stone-900">Order History</h2>
                                 <div className="flex gap-2">
-                                    <select className="bg-white border border-stone-100 rounded-xl px-4 py-2 text-sm font-bold text-stone-600 outline-none">
+                                    <select
+                                        value={orderFilter}
+                                        onChange={(e) => setOrderFilter(e.target.value)}
+                                        className="bg-white border border-stone-100 rounded-xl px-4 py-2 text-sm font-bold text-stone-600 outline-none cursor-pointer hover:border-green-200 transition-colors"
+                                    >
                                         <option>All Orders</option>
                                         <option>Past 3 Months</option>
                                         <option>2023</option>
@@ -200,7 +277,14 @@ export default function ProfilePage() {
                                 </div>
                             </div>
 
-                            {orders.map((order) => (
+                            {filteredOrders.length === 0 ? (
+                                <div className="bg-white rounded-3xl border border-stone-100 p-12 text-center">
+                                    <div className="w-16 h-16 bg-stone-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                        <Package className="w-8 h-8 text-stone-200" />
+                                    </div>
+                                    <p className="font-bold text-stone-400">No orders found for this period.</p>
+                                </div>
+                            ) : filteredOrders.map((order) => (
                                 <div key={order.id} className="bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden">
                                     <div className="p-6 border-b border-stone-50 bg-stone-50/30 flex flex-wrap items-center justify-between gap-4">
                                         <div className="flex gap-8">
@@ -236,11 +320,35 @@ export default function ProfilePage() {
                                                         <Image src={item.image} alt={item.product_name} fill className="object-cover" />
                                                     </div>
                                                     <div className="flex-1">
-                                                        <h4 className="text-sm font-bold text-stone-900 hover:text-green-600 transition-colors cursor-pointer">{item.product_name}</h4>
+                                                        <h4
+                                                            onClick={() => router.push(`/products/${item.product_id}`)}
+                                                            className="text-sm font-bold text-stone-900 hover:text-green-600 transition-colors cursor-pointer"
+                                                        >
+                                                            {item.product_name}
+                                                        </h4>
                                                         <p className="text-xs text-stone-400 mt-1">Qty: {item.quantity}</p>
                                                         <div className="flex gap-4 mt-3">
-                                                            <button className="text-[10px] font-black uppercase tracking-widest bg-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-black transition-colors">Buy it again</button>
-                                                            <button className="text-[10px] font-black uppercase tracking-widest bg-white border border-stone-100 text-stone-600 px-3 py-1.5 rounded-lg hover:bg-stone-50 transition-colors">View item</button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    addToCart({
+                                                                        product_id: item.product_id,
+                                                                        product_name: item.product_name,
+                                                                        product_price: item.product_price,
+                                                                        image: item.image,
+                                                                        quantity: 1
+                                                                    });
+                                                                    router.push("/cart");
+                                                                }}
+                                                                className="text-[10px] font-black uppercase tracking-widest bg-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-black transition-colors"
+                                                            >
+                                                                Buy it again
+                                                            </button>
+                                                            <button
+                                                                onClick={() => router.push(`/products/${item.product_id}`)}
+                                                                className="text-[10px] font-black uppercase tracking-widest bg-white border border-stone-100 text-stone-600 px-3 py-1.5 rounded-lg hover:bg-stone-50 transition-colors"
+                                                            >
+                                                                View item
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -257,14 +365,20 @@ export default function ProfilePage() {
                         <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                             <div className="flex items-center justify-between mb-8">
                                 <h2 className="text-2xl font-black text-stone-900">My Addresses</h2>
-                                <button className="bg-stone-900 text-white px-6 py-3 rounded-2xl font-black text-sm hover:bg-black transition-all flex items-center gap-2 shadow-xl shadow-stone-100">
+                                <button
+                                    onClick={() => {
+                                        setEditingAddress(null);
+                                        setIsAddressModalOpen(true);
+                                    }}
+                                    className="bg-stone-900 text-white px-6 py-3 rounded-2xl font-black text-sm hover:bg-black transition-all flex items-center gap-2 shadow-xl shadow-stone-100"
+                                >
                                     <Plus className="w-4 h-4" />
                                     Add New Address
                                 </button>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {user.addresses.map((addr) => (
+                                {userProfile.addresses.map((addr) => (
                                     <div key={addr.id} className={`bg-white rounded-[2rem] border p-8 flex flex-col justify-between ${addr.isDefault ? 'border-green-200 shadow-lg shadow-green-50/20' : 'border-stone-100 shadow-sm'}`}>
                                         <div>
                                             <div className="flex items-center justify-between mb-6">
@@ -286,8 +400,20 @@ export default function ProfilePage() {
                                             </div>
                                         </div>
                                         <div className="mt-8 flex gap-3">
-                                            <button className="flex-1 bg-stone-50 text-stone-800 text-xs font-bold py-3 rounded-xl hover:bg-stone-100 transition-colors">Edit</button>
-                                            {!addr.isDefault && <button className="flex-1 bg-white border border-stone-100 text-stone-600 text-xs font-bold py-3 rounded-xl hover:bg-stone-50 transition-colors text-red-500">Remove</button>}
+                                            <button
+                                                onClick={() => handleEditAddress(addr)}
+                                                className="flex-1 bg-stone-50 text-stone-800 text-xs font-bold py-3 rounded-xl hover:bg-stone-100 transition-colors flex items-center justify-center gap-2"
+                                            >
+                                                <Edit3 className="w-3 h-3" /> Edit
+                                            </button>
+                                            {!addr.isDefault && (
+                                                <button
+                                                    onClick={() => handleRemoveAddress(addr.id)}
+                                                    className="flex-1 bg-white border border-stone-100 text-red-500 text-xs font-bold py-3 rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                                                >
+                                                    <Trash2 className="w-3 h-3" /> Remove
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -333,28 +459,267 @@ export default function ProfilePage() {
                                     </div>
                                 </section>
 
-                                <section>
-                                    <h3 className="text-xs font-black text-stone-300 uppercase tracking-[0.2em] mb-6">Security</h3>
-                                    <button className="w-full flex items-center justify-between p-4 bg-stone-50/50 rounded-2xl hover:bg-stone-50 transition-colors">
-                                        <span className="font-bold text-stone-900 text-sm">Change Password</span>
-                                        <ChevronRight className="w-5 h-5 text-stone-300" />
-                                    </button>
-                                </section>
-
                                 <section className="pt-4 border-t border-stone-50 text-center">
-                                    <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest">Account ID: {user.id}</p>
+                                    <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest">Account ID: {userProfile.id}</p>
                                 </section>
                             </div>
                         </div>
                     )}
                 </main>
             </div>
+
+            {/* Edit Profile Modal */}
+            <EditProfileModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                user={userProfile}
+                onSave={handleSaveProfile}
+            />
+
+            {/* Address Modal */}
+            <AddressModal
+                isOpen={isAddressModalOpen}
+                onClose={() => {
+                    setIsAddressModalOpen(false);
+                    setEditingAddress(null);
+                }}
+                address={editingAddress}
+                onSave={handleSaveAddress}
+            />
         </div>
     );
 }
 
-function Plus(props: any) {
+interface EditProfileModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    user: any;
+    onSave: (data: { name: string; email: string; phone: string }) => void;
+}
+
+function EditProfileModal({ isOpen, onClose, user, onSave }: EditProfileModalProps) {
+    const [formData, setFormData] = useState({
+        name: user.name,
+        email: user.email,
+        phone: user.phone
+    });
+
+    if (!isOpen) return null;
+
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                <div className="p-8 border-b border-stone-50 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-black text-stone-900">Edit Profile</h2>
+                        <p className="text-sm text-stone-400 font-medium">Update your personal information</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 bg-stone-50 rounded-full text-stone-400 hover:text-stone-900 transition-colors">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
+                <div className="p-8 space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Full Name</label>
+                        <input
+                            type="text"
+                            className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Email Address</label>
+                        <input
+                            type="email"
+                            className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Phone Number</label>
+                        <input
+                            type="text"
+                            className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                            value={formData.phone}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        />
+                    </div>
+                </div>
+
+                <div className="p-8 bg-stone-50/50 flex gap-4">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 px-6 py-4 rounded-2xl text-sm font-black text-stone-500 hover:bg-stone-100 transition-all"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => onSave(formData)}
+                        className="flex-1 px-6 py-4 rounded-2xl text-sm font-black text-white bg-stone-900 hover:bg-black shadow-xl shadow-stone-200 transition-all"
+                    >
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function AddressModal({ isOpen, onClose, address, onSave }: { isOpen: boolean; onClose: () => void; address: any; onSave: (data: any) => void }) {
+    const [formData, setFormData] = useState({
+        label: address?.label || "Home",
+        fullName: address?.fullName || "",
+        phone: address?.phone || "",
+        pinCode: address?.pinCode || "",
+        city: address?.city || "",
+        state: address?.state || "",
+        isDefault: address?.isDefault || false
+    });
+
+    // Update form when address prop changes
+    React.useEffect(() => {
+        if (address) {
+            setFormData({
+                label: address.label,
+                fullName: address.fullName,
+                phone: address.phone,
+                pinCode: address.pinCode,
+                city: address.city,
+                state: address.state,
+                isDefault: address.isDefault
+            });
+        } else {
+            setFormData({
+                label: "Home",
+                fullName: "",
+                phone: "",
+                pinCode: "",
+                city: "",
+                state: "",
+                isDefault: false
+            });
+        }
+    }, [address, isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
+                <div className="p-8 border-b border-stone-50 flex items-center justify-between sticky top-0 bg-white z-10">
+                    <div>
+                        <h2 className="text-2xl font-black text-stone-900">{address ? 'Edit Address' : 'Add New Address'}</h2>
+                        <p className="text-sm text-stone-400 font-medium">Provide your delivery details</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 bg-stone-50 rounded-full text-stone-400 hover:text-stone-900 transition-colors">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
+                <div className="p-8 space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Label</label>
+                            <select
+                                className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                                value={formData.label}
+                                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                            >
+                                <option>Home</option>
+                                <option>Office</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Full Name</label>
+                            <input
+                                type="text"
+                                className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                                placeholder="Enter full name"
+                                value={formData.fullName}
+                                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Phone Number</label>
+                            <input
+                                type="text"
+                                className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                                placeholder="+91 00000 00000"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">PIN Code</label>
+                            <input
+                                type="text"
+                                className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                                placeholder="000 000"
+                                value={formData.pinCode}
+                                onChange={(e) => setFormData({ ...formData, pinCode: e.target.value })}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">City</label>
+                            <input
+                                type="text"
+                                className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                                placeholder="City"
+                                value={formData.city}
+                                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">State</label>
+                            <input
+                                type="text"
+                                className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                                placeholder="State"
+                                value={formData.state}
+                                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                            />
+                        </div>
+                    </div>
+
+                    <label className="flex items-center gap-3 p-4 bg-stone-50/50 rounded-2xl cursor-pointer hover:bg-stone-50 transition-colors">
+                        <input
+                            type="checkbox"
+                            className="w-5 h-5 rounded-lg border-stone-200 text-green-600 focus:ring-green-500"
+                            checked={formData.isDefault}
+                            onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
+                        />
+                        <div>
+                            <p className="text-sm font-bold text-stone-900">Set as default address</p>
+                            <p className="text-xs text-stone-400 font-medium">Use this address for all future orders.</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div className="p-8 bg-stone-50/50 flex gap-4">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 px-6 py-4 rounded-2xl text-sm font-black text-stone-500 hover:bg-stone-100 transition-all"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => onSave(formData)}
+                        className="flex-1 px-6 py-4 rounded-2xl text-sm font-black text-white bg-stone-900 hover:bg-black shadow-xl shadow-stone-200 transition-all"
+                    >
+                        Save Address
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }
