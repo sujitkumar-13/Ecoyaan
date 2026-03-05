@@ -179,24 +179,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     </div>
 
                     {/* Sustainability Badges */}
-                    <div className="mt-4 bg-[#F2FCF6] rounded-xl p-4 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 border border-green-50 mb-4">
-                        <div className="relative w-[60px] h-[60px] flex items-center justify-center shrink-0">
+                    <div className="mt-4 bg-[#F2FCF6] rounded-xl p-6 flex flex-col sm:flex-row items-center gap-6 sm:gap-8 border border-green-50 mb-6">
+                        <div className="relative w-[80px] h-[80px] flex items-center justify-center shrink-0">
                             <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
                                 <path className="text-green-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray="100, 100" />
                                 <path className="text-green-600" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray="89, 100" />
                             </svg>
                             <div className="flex flex-col items-center leading-none">
-                                <span className="text-sm font-bold text-green-800">89%</span>
-                                <span className="text-[9px] text-green-700">Eco Score</span>
+                                <span className="text-lg font-bold text-green-800">89%</span>
+                                <span className="text-[11px] text-green-700 font-medium">Eco Score</span>
                             </div>
                         </div>
                         <div>
-                            <h3 className="text-sm font-bold text-gray-900 mb-1">Sustainability Badges</h3>
-                            <p className="text-xs text-gray-500 mb-3">AI-verified product claims</p>
-                            <div className="flex flex-wrap gap-2">
+                            <h3 className="text-lg font-bold text-gray-900 mb-1">Sustainability Badges</h3>
+                            <p className="text-sm text-gray-500 mb-4">AI-verified product claims</p>
+                            <div className="flex flex-wrap gap-2.5">
                                 {product.badges?.map((badge, idx) => (
-                                    <div key={idx} className="flex items-center gap-1.5 px-3 py-1 bg-white border border-green-200 rounded-full text-xs font-medium text-green-800 shadow-sm">
-                                        <Leaf className="w-3 h-3 text-green-600" />
+                                    <div key={idx} className="flex items-center gap-2 px-4 py-1.5 bg-white border border-green-200 rounded-full text-sm font-medium text-green-800 shadow-sm">
+                                        <Leaf className="w-4 h-4 text-green-600" />
                                         {badge}
                                     </div>
                                 ))}
