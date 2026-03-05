@@ -13,7 +13,7 @@ export function getProducts(): Product[] {
             badges: ["Vegan", "Zero Waste", "Recycled", "Cruelty Free", "Plastic-Free"],
             categoryPath: ["Personal Care", "Dental", "Bamboo Toothbrush (Pack of 4)"],
             attributes: {
-                "Material": "Bamboo",
+                "Material": "Bamx`boo",
                 "Bristle Type": "Soft",
                 "Pack Size": "4"
             }

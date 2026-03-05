@@ -55,3 +55,28 @@ export interface WishlistContextType {
   removeFromWishlist: (productId: number) => void;
   isInWishlist: (productId: number) => boolean;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  avatar?: string;
+  joinedAt: string;
+  addresses: SavedAddress[];
+}
+
+export interface SavedAddress extends ShippingAddress {
+  id: string;
+  isDefault: boolean;
+  label: string; // Home, Office, etc.
+}
+
+export interface Order {
+  id: string;
+  date: string;
+  status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  total: number;
+  items: CartItem[];
+  shippingAddress: ShippingAddress;
+}

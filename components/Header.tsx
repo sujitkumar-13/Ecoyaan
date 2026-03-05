@@ -16,7 +16,7 @@ export function Header() {
     const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
     const wishlistCount = wishlistItems.length;
 
-    const isCheckoutPage = ["/cart", "/wishlist", "/shipping", "/payment", "/success"].includes(pathname);
+    const isCheckoutPage = ["/cart", "/wishlist", "/shipping", "/payment", "/success", "/profile"].includes(pathname);
 
     const MENU_DATA: Record<string, { columns: { title: string, links?: string[] }[], width: string, gridClass: string }> = {
         "Beauty & Personal Care": {
@@ -120,9 +120,9 @@ export function Header() {
 
                     {/* Right Actions */}
                     <div className="flex items-center gap-6 lg:gap-10 flex-shrink-0">
-                        <div className="hidden md:flex items-center gap-3 cursor-pointer group">
+                        <Link href="/profile" className="hidden md:flex items-center gap-3 cursor-pointer group hover:text-[#006b38] transition-colors">
                             <User className="w-7 h-7 text-[#008C4A]" />
-                        </div>
+                        </Link>
 
                         <Link href="/wishlist" className="relative text-[#008C4A] hover:text-[#006b38]">
                             <Heart className="w-7 h-7" strokeWidth={2.5} />
