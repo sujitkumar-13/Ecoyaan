@@ -12,6 +12,12 @@ export interface Product {
   price: number;
   image: string;
   description: string;
+  images?: string[];
+  badges?: string[];
+  oldPrice?: number;
+  attributes?: Record<string, string>;
+  reviews?: any[];
+  categoryPath?: string[];
 }
 
 export interface CartData {

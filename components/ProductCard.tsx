@@ -4,11 +4,14 @@ import { useCart } from "@/context/CartContext";
 import { Product } from "@/types";
 import { ShoppingCart, Leaf } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export function ProductCard({ product }: { product: Product }) {
     const { addToCart } = useCart();
 
-    const handleAddToCart = () => {
+    const handleAddToCart = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
         addToCart({
             product_id: product.id,
             product_name: product.name,
@@ -19,8 +22,8 @@ export function ProductCard({ product }: { product: Product }) {
     };
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden 
-                    transition-all duration-300 hover:shadow-xl group">
+        <Link href={`/products/${product.id}`} className="bg-white rounded-2xl border border-gray-200 overflow-hidden 
+                    transition-all duration-300 hover:shadow-xl group block">
 
             {/* Product Image */}
             <div className="relative aspect-square bg-gray-100 overflow-hidden">
@@ -65,6 +68,6 @@ export function ProductCard({ product }: { product: Product }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </Link>
     );
 }
