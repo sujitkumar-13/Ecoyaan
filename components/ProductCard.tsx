@@ -1,13 +1,26 @@
 "use client";
 
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { Product } from "@/types";
-import { ShoppingCart, Leaf } from "lucide-react";
+import { ShoppingCart, Leaf, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 export function ProductCard({ product }: { product: Product }) {
     const { addToCart } = useCart();
+    const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+    const isLiked = isInWishlist(product.id);
+
+    const handleLike = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isLiked) {
+            removeFromWishlist(product.id);
+        } else {
+            addToWishlist(product);
+        }
+    };
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -35,6 +48,15 @@ export function ProductCard({ product }: { product: Product }) {
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     priority={false}
                 />
+
+                {/* Like Button */}
+                <button
+                    onClick={handleLike}
+                    className="absolute top-3 right-3 p-1.5 bg-white rounded-full shadow-sm hover:scale-110 active:scale-95 transition-all z-10 text-green-700"
+                    aria-label="Like product"
+                >
+                    <Heart className={`w-5 h-5 transition-colors ${isLiked ? 'fill-green-700' : 'fill-transparent'}`} />
+                </button>
             </div>
 
             {/* Product Info */}

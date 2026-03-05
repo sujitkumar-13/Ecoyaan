@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 export const dynamic = "force-dynamic";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { WishlistProvider } from "@/context/WishlistContext";
 import { getCartData } from "@/lib/api";
 import { Header } from "@/components/Header";
 import { MobileNavBar } from "@/components/MobileNavBar";
@@ -19,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ecoyaan | Checkout",
+  title: "Ecoyaan",
   description: "Sustainable eCommerce Checkout Flow",
 };
 
@@ -35,14 +36,16 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-stone-50 text-stone-900 flex flex-col min-h-screen pb-16 md:pb-0`}
       >
-        <CartProvider initialData={initialCartData}>
-          <Header />
-          <main className="flex-1 w-full mx-auto p-4 md:p-8">
-            {children}
-          </main>
-          <MobileNavBar />
-          <Footer />
-        </CartProvider>
+        <WishlistProvider>
+          <CartProvider initialData={initialCartData}>
+            <Header />
+            <main className="flex-1 w-full mx-auto p-4 md:p-8">
+              {children}
+            </main>
+            <MobileNavBar />
+            <Footer />
+          </CartProvider>
+        </WishlistProvider>
       </body>
     </html>
   );

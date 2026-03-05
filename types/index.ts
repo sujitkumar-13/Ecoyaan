@@ -48,3 +48,10 @@ export interface CartContextType {
   subtotal: number;
   grandTotal: number;
 }
+
+export interface WishlistContextType {
+  wishlistItems: Product[];
+  addToWishlist: (product: Product) => void;
+  removeFromWishlist: (productId: number) => void;
+  isInWishlist: (productId: number) => boolean;
+}

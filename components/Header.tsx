@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { Search, Heart, ShoppingCart } from "lucide-react";
 
 export function Header() {
     const { cartItems } = useCart();
+    const { wishlistItems } = useWishlist();
     const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+    const wishlistCount = wishlistItems.length;
 
     return (
         <header className="sticky top-0 bg-white py-4 md:py-5 px-4 md:px-8 z-50 w-full shadow-sm transition-all duration-300">
@@ -66,8 +69,13 @@ export function Header() {
                     </div>
 
                     {/* Wishlist */}
-                    <Link href="#" className="text-[#008C4A] hover:text-[#006b38] transition-colors">
+                    <Link href="/wishlist" className="relative text-[#008C4A] hover:text-[#006b38] transition-colors">
                         <Heart className="w-7 h-7" strokeWidth={2.5} />
+                        {wishlistCount > 0 && (
+                            <span className="absolute top-0 right-0 bg-[#008C4A] text-white text-[11px] font-bold w-[20px] h-[20px] flex items-center justify-center rounded-full border-2 border-white -translate-y-2.5 translate-x-2.5">
+                                {wishlistCount}
+                            </span>
+                        )}
                     </Link>
 
                     {/* Cart */}
