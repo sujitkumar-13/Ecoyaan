@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getProductById } from "@/lib/products";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import {
     ChevronRight, Share2, Heart, Leaf,
     Minus, Plus, ShoppingBag, ShieldCheck, Star,
@@ -15,11 +16,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     const { id } = use(params);
     const product = getProductById(Number(id));
     const { addToCart } = useCart();
+    const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
     const [mainImage, setMainImage] = useState(product?.image || "");
     const [quantity, setQuantity] = useState(1);
     const [openAccordions, setOpenAccordions] = useState<string[]>(["why-loves-it"]);
     const [pincode, setPincode] = useState("");
+    const [shareTooltip, setShareTooltip] = useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
@@ -45,6 +48,21 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             image: product.image,
             quantity: quantity,
         });
+    };
+
+    const handleLike = () => {
+        if (!product) return;
+        if (isInWishlist(product.id)) {
+            removeFromWishlist(product.id);
+        } else {
+            addToWishlist(product);
+        }
+    };
+
+    const handleShare = () => {
+        navigator.clipboard.writeText(window.location.href);
+        setShareTooltip(true);
+        setTimeout(() => setShareTooltip(false), 2000);
     };
 
     const discountPercentage = product.oldPrice
@@ -136,8 +154,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                             {product.name}
                         </h1>
                         <div className="flex gap-3 text-gray-500 shrink-0">
-                            <button className="hover:text-green-600 transition-colors hidden md:block"><Share2 className="w-5 h-5" /></button>
-                            <button className="hover:text-red-500 transition-colors"><Heart className="w-5 h-5" /></button>
+                            <div className="relative">
+                                <button
+                                    onClick={handleShare}
+                                    className="hover:text-green-600 transition-colors p-2 rounded-full hover:bg-green-50"
+                                    title="Share product"
+                                >
+                                    <Share2 className="w-5 h-5" />
+                                </button>
+                                {shareTooltip && (
+                                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-20">
+                                        Copied!
+                                    </span>
+                                )}
+                            </div>
+                            <button
+                                onClick={handleLike}
+                                className={`transition-colors p-2 rounded-full hover:bg-green-50 ${isInWishlist(product.id) ? 'text-red-500' : 'hover:text-red-500'}`}
+                                title={isInWishlist(product.id) ? "Remove from Wishlist" : "Add to Wishlist"}
+                            >
+                                <Heart className={`w-5 h-5 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
+                            </button>
                         </div>
                     </div>
 
