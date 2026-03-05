@@ -1,34 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { ProductCard } from "@/components/ProductCard";
-import { Product } from "@/types";
+import { getProducts } from "@/lib/products";
 import { useCart } from "@/context/CartContext";
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const products = getProducts();
   const { cartItems } = useCart();
-
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await fetch('/api/products');
-        if (res.ok) {
-          const data = await res.json();
-          setProducts(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch products API", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProducts();
-  }, []);
 
   return (
     <div className="w-full">
@@ -113,16 +93,9 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 min-h-[400px]">
-            {loading ? (
-              <div className="col-span-full flex flex-col items-center justify-center text-stone-400">
-                <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p>Loading eco-friendly products...</p>
-              </div>
-            ) : (
-              products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))
-            )}
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
           </div>
         </div>
       </section>
