@@ -2,7 +2,6 @@
 
 import { useCart } from "@/context/CartContext";
 import { CartItem as CartItemType } from "@/types";
-import Image from "next/image";
 
 export function CartItem({ item }: { item: CartItemType }) {
     const { updateQuantity, removeItem } = useCart();

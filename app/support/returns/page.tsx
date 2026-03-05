@@ -1,6 +1,5 @@
 import React from "react";
 import { RefreshCcw, ShieldCheck, Mail } from "lucide-react";
-import Link from "next/link";
 
 export default function ReturnsPage() {
     return (

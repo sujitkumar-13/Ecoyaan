@@ -6,11 +6,10 @@ import Link from "next/link";
 import { getProductById } from "@/lib/products";
 import { useCart } from "@/context/CartContext";
 import {
-    ChevronRight, Share2, Heart, Leaf, Recycle, MapPin,
-    Minus, Plus, ShoppingBag, ShieldCheck, ChevronDown, ChevronUp, Star,
+    ChevronRight, Share2, Heart, Leaf,
+    Minus, Plus, ShoppingBag, ShieldCheck, Star,
     X, Camera
 } from "lucide-react";
-import { Product } from "@/types";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
