@@ -47,11 +47,11 @@ export function Footer() {
                     <div>
                         <h3 className="text-white font-semibold text-lg mb-6">Customer Service</h3>
                         <ul className="flex flex-col gap-4 text-sm">
-                            <li><Link href="#" className="hover:text-[#008C4A] transition-colors">FAQ</Link></li>
-                            <li><Link href="#" className="hover:text-[#008C4A] transition-colors">Shipping & Delivery</Link></li>
-                            <li><Link href="#" className="hover:text-[#008C4A] transition-colors">Returns & Exchanges</Link></li>
-                            <li><Link href="#" className="hover:text-[#008C4A] transition-colors">Terms of Service</Link></li>
-                            <li><Link href="#" className="hover:text-[#008C4A] transition-colors">Privacy Policy</Link></li>
+                            <li><Link href="/support/faq" className="hover:text-[#008C4A] transition-colors">FAQ</Link></li>
+                            <li><Link href="/support/shipping" className="hover:text-[#008C4A] transition-colors">Shipping & Delivery</Link></li>
+                            <li><Link href="/support/returns" className="hover:text-[#008C4A] transition-colors">Returns & Exchanges</Link></li>
+                            <li><Link href="/legal/terms" className="hover:text-[#008C4A] transition-colors">Terms of Service</Link></li>
+                            <li><Link href="/legal/privacy" className="hover:text-[#008C4A] transition-colors">Privacy Policy</Link></li>
                         </ul>
                     </div>
 
