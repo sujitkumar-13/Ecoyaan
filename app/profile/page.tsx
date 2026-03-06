@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 export default function ProfilePage() {
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [userProfile, setUserProfile] = useState(getUser());
     const orders = getOrders();
     const router = useRouter();
@@ -33,6 +34,11 @@ export default function ProfilePage() {
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [editingAddress, setEditingAddress] = useState<any>(null);
     const [orderFilter, setOrderFilter] = useState("All Orders");
+    const [settings, setSettings] = useState({
+        pushNotifications: true,
+        savePaymentMethods: false
+    });
+    const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
 
     const filteredOrders = orders.filter(order => {
         if (orderFilter === "All Orders") return true;
@@ -98,6 +104,28 @@ export default function ProfilePage() {
         setIsAddressModalOpen(true);
     };
 
+    const handleToggleSetting = (setting: keyof typeof settings) => {
+        setSettings(prev => ({
+            ...prev,
+            [setting]: !prev[setting]
+        }));
+    };
+
+    const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const imageUrl = URL.createObjectURL(file);
+            setUserProfile(prev => ({
+                ...prev,
+                avatar: imageUrl
+            }));
+        }
+    };
+
+    const triggerAvatarUpload = () => {
+        fileInputRef.current?.click();
+    };
+
     return (
         <div className="max-w-[1200px] mx-auto pb-8 px-4 md:px-0 relative">
             <h1 className="text-3xl font-black text-stone-900 mb-8 tracking-tight">My Account</h1>
@@ -107,16 +135,29 @@ export default function ProfilePage() {
                 <aside className="w-full lg:w-72 shrink-0 bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden sticky top-28">
                     <div className="p-6 bg-stone-50/50 border-b border-stone-100 flex flex-col items-center text-center">
                         <div className="relative group mb-4">
-                            <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-md bg-green-100 flex items-center justify-center">
+                            <div
+                                onClick={() => setIsImagePreviewOpen(true)}
+                                className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-md bg-green-100 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
+                            >
                                 {userProfile.avatar ? (
                                     <Image src={userProfile.avatar} alt={userProfile.name} width={80} height={80} className="object-cover" />
                                 ) : (
                                     <UserIcon className="w-8 h-8 text-green-600" />
                                 )}
                             </div>
-                            <button className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-md border border-stone-100 text-stone-400 hover:text-green-600 transition-colors opacity-0 group-hover:opacity-100">
+                            <button
+                                onClick={triggerAvatarUpload}
+                                className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-md border border-stone-100 text-stone-400 hover:text-green-600 transition-colors opacity-0 group-hover:opacity-100"
+                            >
                                 <Camera className="w-4 h-4" />
                             </button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleAvatarUpload}
+                            />
                         </div>
                         <h2 className="font-bold text-stone-900">{userProfile.name}</h2>
                         <p className="text-xs text-stone-400 font-medium">Member since {userProfile.joinedAt}</p>
@@ -440,8 +481,11 @@ export default function ProfilePage() {
                                                     <p className="text-xs text-stone-400 font-medium">Receive updates about your orders and offers.</p>
                                                 </div>
                                             </div>
-                                            <div className="w-12 h-6 bg-green-500 rounded-full relative p-1 cursor-pointer">
-                                                <div className="w-4 h-4 bg-white rounded-full absolute right-1"></div>
+                                            <div
+                                                onClick={() => handleToggleSetting('pushNotifications')}
+                                                className={`w-12 h-6 rounded-full relative p-1 cursor-pointer transition-colors ${settings.pushNotifications ? 'bg-green-500' : 'bg-stone-200'}`}
+                                            >
+                                                <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${settings.pushNotifications ? 'right-1' : 'left-1'}`}></div>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between p-4 bg-stone-50/50 rounded-2xl">
@@ -452,8 +496,11 @@ export default function ProfilePage() {
                                                     <p className="text-xs text-stone-400 font-medium">Fast checkout by saving your card details securely.</p>
                                                 </div>
                                             </div>
-                                            <div className="w-12 h-6 bg-stone-200 rounded-full relative p-1 cursor-pointer">
-                                                <div className="w-4 h-4 bg-white rounded-full absolute left-1"></div>
+                                            <div
+                                                onClick={() => handleToggleSetting('savePaymentMethods')}
+                                                className={`w-12 h-6 rounded-full relative p-1 cursor-pointer transition-colors ${settings.savePaymentMethods ? 'bg-green-500' : 'bg-stone-200'}`}
+                                            >
+                                                <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${settings.savePaymentMethods ? 'right-1' : 'left-1'}`}></div>
                                             </div>
                                         </div>
                                     </div>
@@ -485,6 +532,14 @@ export default function ProfilePage() {
                 }}
                 address={editingAddress}
                 onSave={handleSaveAddress}
+            />
+
+            {/* Image Preview Modal */}
+            <ImagePreviewModal
+                isOpen={isImagePreviewOpen}
+                onClose={() => setIsImagePreviewOpen(false)}
+                imageSrc={userProfile.avatar || ""}
+                userName={userProfile.name}
             />
         </div>
     );
@@ -718,6 +773,43 @@ function AddressModal({ isOpen, onClose, address, onSave }: { isOpen: boolean; o
                     >
                         Save Address
                     </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function ImagePreviewModal({ isOpen, onClose, imageSrc, userName }: { isOpen: boolean; onClose: () => void; imageSrc: string; userName: string }) {
+    if (!isOpen) return null;
+
+    return (
+        <div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300"
+            onClick={onClose}
+        >
+            <div className="relative max-w-4xl w-full flex flex-col items-center animate-in zoom-in-95 duration-300">
+                <button
+                    onClick={onClose}
+                    className="absolute -top-12 right-0 p-2 text-white/70 hover:text-white transition-colors"
+                >
+                    <X className="w-8 h-8" />
+                </button>
+                <div
+                    className="relative w-full aspect-square max-h-[70vh] rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-white/5"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {imageSrc ? (
+                        <Image src={imageSrc} alt={userName} fill className="object-contain" />
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-white/20">
+                            <UserIcon className="w-32 h-32 mb-4" />
+                            <p className="font-bold text-lg">No Profile Photo</p>
+                        </div>
+                    )}
+                </div>
+                <div className="mt-8 text-center text-white">
+                    <h3 className="text-2xl font-black">{userName}</h3>
+                    <p className="text-sm text-white/50 font-medium">Profile Photo</p>
                 </div>
             </div>
         </div>
