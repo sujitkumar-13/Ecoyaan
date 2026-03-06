@@ -210,12 +210,51 @@ export default function ProfilePage() {
     if (!isMounted) return null;
 
     return (
-        <div className="max-w-[1200px] mx-auto pb-8 px-4 md:px-0 relative">
-            <h1 className="text-3xl font-black text-stone-900 mb-8 tracking-tight">My Account</h1>
+        <div className="max-w-[1200px] mx-auto pb-24 md:pb-8 px-4 md:px-0 relative">
+            <h1 className="text-2xl md:text-3xl font-black text-stone-900 mb-6 md:mb-8 tracking-tight">My Account</h1>
 
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
-                {/* Sidebar Navigation */}
-                <aside className="w-full lg:w-72 shrink-0 bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden sticky top-28">
+            <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start">
+                {/* Mobile: Horizontal Tab Bar */}
+                <div className="lg:hidden w-full bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
+                    {/* User info strip */}
+                    <div className="px-4 py-4 bg-stone-50/70 border-b border-stone-100 flex items-center gap-3">
+                        <div
+                            onClick={() => setIsImagePreviewOpen(true)}
+                            className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md bg-green-100 flex items-center justify-center cursor-pointer shrink-0"
+                        >
+                            {userProfile.avatar ? (
+                                <Image src={userProfile.avatar} alt={userProfile.name} width={48} height={48} className="object-cover" />
+                            ) : (
+                                <UserIcon className="w-5 h-5 text-green-600" />
+                            )}
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="font-bold text-stone-900 text-sm truncate">{userProfile.name}</h2>
+                            <p className="text-xs text-stone-400">Member since {userProfile.joinedAt}</p>
+                        </div>
+                    </div>
+                    {/* Scrollable tab row */}
+                    <div className="flex overflow-x-auto no-scrollbar">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
+                                className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === tab.id
+                                    ? 'border-green-600 text-green-700 bg-green-50/30'
+                                    : 'border-transparent text-stone-400 hover:text-stone-700'
+                                    }`}
+                            >
+                                <tab.icon className="w-4 h-4" />
+                                {tab.label}
+                                {tab.id === 'orders' && <span className="bg-stone-100 text-stone-500 rounded-full px-1.5 py-0.5 text-[10px]">{orders.length}</span>}
+                            </button>
+                        ))}
+
+                    </div>
+                </div>
+
+                {/* Desktop: Sidebar Navigation */}
+                <aside className="hidden lg:block w-72 shrink-0 bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden lg:sticky lg:top-28">
                     <div className="p-6 bg-stone-50/50 border-b border-stone-100 flex flex-col items-center text-center">
                         <div className="relative group mb-4">
                             <div
@@ -276,7 +315,7 @@ export default function ProfilePage() {
                 </aside>
 
                 {/* Main Content Area */}
-                <main className="flex-1 w-full min-h-[600px]">
+                <main className="flex-1 w-full min-h-0">
                     {isLoading ? (
                         <div className="flex items-center justify-center h-64">
                             <div className="w-8 h-8 border-4 border-[#008C4A] border-t-transparent rounded-full animate-spin"></div>
@@ -515,61 +554,75 @@ export default function ProfilePage() {
                             {/* Addresses Tab */}
                             {activeTab === "addresses" && (
                                 <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                                    <div className="flex items-center justify-between mb-8">
-                                        <h2 className="text-2xl font-black text-stone-900">My Addresses</h2>
+                                    <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
+                                        <h2 className="text-xl md:text-2xl font-black text-stone-900">My Addresses</h2>
                                         <button
                                             onClick={() => {
                                                 setEditingAddress(null);
                                                 setIsAddressModalOpen(true);
                                             }}
-                                            className="bg-stone-900 text-white px-6 py-3 rounded-2xl font-black text-sm hover:bg-black transition-all flex items-center gap-2 shadow-xl shadow-stone-100"
+                                            className="bg-stone-900 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-2xl font-black text-xs md:text-sm hover:bg-black transition-all flex items-center gap-2 shadow-xl shadow-stone-100"
                                         >
                                             <Plus className="w-4 h-4" />
-                                            Add New Address
+                                            <span className="hidden sm:inline">Add New Address</span>
+                                            <span className="sm:hidden">Add Address</span>
                                         </button>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {userProfile.addresses.map((addr) => (
-                                            <div key={addr.id} className={`bg-white rounded-[2rem] border p-8 flex flex-col justify-between ${addr.isDefault ? 'border-green-200 shadow-lg shadow-green-50/20' : 'border-stone-100 shadow-sm'}`}>
-                                                <div>
-                                                    <div className="flex items-center justify-between mb-6">
-                                                        <div className="flex items-center gap-3">
-                                                            <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${addr.isDefault ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-600'}`}>
-                                                                {addr.label}
-                                                            </span>
-                                                            {addr.isDefault && <span className="text-[10px] font-black uppercase tracking-widest text-stone-300">Default</span>}
+                                    {userProfile.addresses.length === 0 ? (
+                                        <div className="bg-white rounded-2xl border border-stone-100 p-10 text-center">
+                                            <MapPin className="w-10 h-10 text-stone-200 mx-auto mb-3" />
+                                            <p className="font-bold text-stone-400 text-sm">No addresses saved yet.</p>
+                                            <button
+                                                onClick={() => { setEditingAddress(null); setIsAddressModalOpen(true); }}
+                                                className="mt-4 text-sm font-black text-green-600 hover:underline"
+                                            >
+                                                Add your first address
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                            {userProfile.addresses.map((addr) => (
+                                                <div key={addr.id} className={`bg-white rounded-2xl md:rounded-[2rem] border p-5 md:p-8 flex flex-col justify-between ${addr.isDefault ? 'border-green-200 shadow-lg shadow-green-50/20' : 'border-stone-100 shadow-sm'}`}>
+                                                    <div>
+                                                        <div className="flex items-center justify-between mb-4 md:mb-6">
+                                                            <div className="flex items-center gap-2 md:gap-3">
+                                                                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${addr.isDefault ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-600'}`}>
+                                                                    {addr.label}
+                                                                </span>
+                                                                {addr.isDefault && <span className="text-[10px] font-black uppercase tracking-widest text-stone-300">Default</span>}
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                <button className="p-2 text-stone-400 hover:text-stone-900 transition-colors"><Settings className="w-4 h-4" /></button>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex gap-2">
-                                                            <button className="p-2 text-stone-400 hover:text-stone-900 transition-colors"><Settings className="w-4 h-4" /></button>
+                                                        <h3 className="font-black text-stone-900 mb-2">{addr.fullName}</h3>
+                                                        <div className="text-sm text-stone-500 font-medium space-y-1">
+                                                            <p>{addr.city}, {addr.state}</p>
+                                                            <p>{addr.pinCode}</p>
+                                                            <p className="pt-2 text-stone-400">{addr.phone}</p>
                                                         </div>
                                                     </div>
-                                                    <h3 className="font-black text-stone-900 mb-2">{addr.fullName}</h3>
-                                                    <div className="text-sm text-stone-500 font-medium space-y-1">
-                                                        <p>{addr.city}, {addr.state}</p>
-                                                        <p>{addr.pinCode}</p>
-                                                        <p className="pt-2 text-stone-400">{addr.phone}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="mt-8 flex gap-3">
-                                                    <button
-                                                        onClick={() => handleEditAddress(addr)}
-                                                        className="flex-1 bg-stone-50 text-stone-800 text-xs font-bold py-3 rounded-xl hover:bg-stone-100 transition-colors flex items-center justify-center gap-2"
-                                                    >
-                                                        <Edit3 className="w-3 h-3" /> Edit
-                                                    </button>
-                                                    {!addr.isDefault && (
+                                                    <div className="mt-5 md:mt-8 flex gap-2 md:gap-3">
                                                         <button
-                                                            onClick={() => handleRemoveAddress(addr.id)}
-                                                            className="flex-1 bg-white border border-stone-100 text-red-500 text-xs font-bold py-3 rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                                                            onClick={() => handleEditAddress(addr)}
+                                                            className="flex-1 bg-stone-50 text-stone-800 text-xs font-bold py-2.5 md:py-3 rounded-xl hover:bg-stone-100 transition-colors flex items-center justify-center gap-2"
                                                         >
-                                                            <Trash2 className="w-3 h-3" /> Remove
+                                                            <Edit3 className="w-3 h-3" /> Edit
                                                         </button>
-                                                    )}
+                                                        {!addr.isDefault && (
+                                                            <button
+                                                                onClick={() => handleRemoveAddress(addr.id)}
+                                                                className="flex-1 bg-white border border-stone-100 text-red-500 text-xs font-bold py-2.5 md:py-3 rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                                                            >
+                                                                <Trash2 className="w-3 h-3" /> Remove
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -580,7 +633,7 @@ export default function ProfilePage() {
                                         <h2 className="text-2xl font-black text-stone-900">Account Settings</h2>
                                         <p className="text-sm text-stone-400 font-medium mt-1">Manage your account preferences and security.</p>
                                     </div>
-                                    <div className="p-4 sm:p-8 space-y-8">
+                                    <div className="p-4 space-y-8">
                                         <section>
                                             <h3 className="text-xs font-black text-stone-300 uppercase tracking-[0.2em] mb-6">Preferences</h3>
                                             <div className="space-y-4">
@@ -617,8 +670,20 @@ export default function ProfilePage() {
                                             </div>
                                         </section>
 
-                                        <section className="pt-4 border-t border-stone-50 text-center">
-                                            <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest">Account ID: {userProfile.id}</p>
+                                        {/* Sign Out — visible only on mobile since sidebar has it on desktop */}
+                                        <section className="pt-2 lg:hidden">
+                                            <button
+                                                onClick={() => {
+                                                    clearWishlist();
+                                                    localStorage.removeItem('userEmail');
+                                                    localStorage.removeItem('ecoyaan_wishlist');
+                                                    router.push('/');
+                                                }}
+                                                className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl text-sm font-black text-red-500 bg-red-50 hover:bg-red-100 transition-all"
+                                            >
+                                                <LogOut className="w-5 h-5" />
+                                                Sign Out
+                                            </button>
                                         </section>
                                     </div>
                                 </div>
