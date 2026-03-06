@@ -15,6 +15,7 @@ export function Header() {
     const pathname = usePathname();
     const router = useRouter();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [authChecked, setAuthChecked] = useState(false);
 
     useEffect(() => {
         const checkAuthStatus = () => {
@@ -46,6 +47,7 @@ export function Header() {
         };
 
         checkAuthStatus();
+        setAuthChecked(true);
     }, [pathname, router]);
 
     const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
@@ -155,22 +157,24 @@ export function Header() {
 
                     {/* Right Actions */}
                     <div className="flex items-center gap-6 lg:gap-10 flex-shrink-0">
-                        {isLoggedIn ? (
-                            <Link href="/profile" className="hidden md:flex items-center gap-3 cursor-pointer group hover:text-[#006b38] transition-colors">
-                                <User className="w-7 h-7 text-[#008C4A]" />
-                            </Link>
-                        ) : (
-                            <div className="hidden md:flex items-center gap-6">
-                                <Link href="/login" className="text-sm font-black text-stone-600 hover:text-[#008C4A] transition-colors">
-                                    Login
+                        {authChecked && (
+                            isLoggedIn ? (
+                                <Link href="/profile" className="hidden md:flex items-center gap-3 cursor-pointer group hover:text-[#006b38] transition-colors">
+                                    <User className="w-7 h-7 text-[#008C4A]" />
                                 </Link>
-                                <Link
-                                    href="/register"
-                                    className="bg-[#008C4A] text-white px-6 py-2.5 rounded-xl font-black text-sm hover:bg-[#006b38] transition-all shadow-lg shadow-green-100 uppercase tracking-widest text-center"
-                                >
-                                    Join Now
-                                </Link>
-                            </div>
+                            ) : (
+                                <div className="hidden md:flex items-center gap-6">
+                                    <Link href="/login" className="text-sm font-black text-stone-600 hover:text-[#008C4A] transition-colors">
+                                        Login
+                                    </Link>
+                                    <Link
+                                        href="/register"
+                                        className="bg-[#008C4A] text-white px-6 py-2.5 rounded-xl font-black text-sm hover:bg-[#006b38] transition-all shadow-lg shadow-green-100 uppercase tracking-widest text-center"
+                                    >
+                                        Join Now
+                                    </Link>
+                                </div>
+                            )
                         )}
 
                         <button
