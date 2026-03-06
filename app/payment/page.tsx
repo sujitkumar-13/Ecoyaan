@@ -27,11 +27,39 @@ export default function PaymentPage() {
 
     const handlePayment = async () => {
         setIsProcessing(true);
-        // Simulate payment processing delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        // Clear cart context and move to success page
-        clearCart();
-        router.push("/success");
+        try {
+            const userEmail = localStorage.getItem('userEmail');
+            if (!userEmail) throw new Error('Not logged in');
+
+            // Simulate payment processing delay
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+
+            const orderData = {
+                userEmail,
+                items: cartItems,
+                shippingAddress,
+                total: cartItems.reduce((acc, item) => acc + item.product_price * item.quantity, 0) + 50, // subtotal + shipping
+                status: 'Delivered', // For demonstration, let's say it's immediately "Delivered" or "Processing"
+                createdAt: new Date(),
+            };
+
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+
+            if (!response.ok) throw new Error('Failed to save order');
+
+            // Clear cart context and move to success page
+            clearCart();
+            router.push("/success");
+        } catch (error) {
+            console.error('Payment error:', error);
+            alert('Failed to process payment. Please try again.');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (

@@ -3,8 +3,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/context/CartContext";
-import { getUser, getOrders } from "@/lib/user";
+import { useCart } from "../../context/CartContext";
+import { useWishlist } from "../../context/WishlistContext";
+import { getUser, getOrders } from "../../lib/user";
 import {
     User as UserIcon,
     Package,
@@ -26,9 +27,10 @@ import {
 export default function ProfilePage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [userProfile, setUserProfile] = useState(getUser());
-    const orders = getOrders();
+    const [orders, setOrders] = useState<any[]>([]);
     const router = useRouter();
     const { addToCart } = useCart();
+    const { clearWishlist } = useWishlist();
     const [activeTab, setActiveTab] = useState<"overview" | "orders" | "addresses" | "settings">("overview");
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -40,25 +42,34 @@ export default function ProfilePage() {
     });
     const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        setIsMounted(true);
         const fetchUserData = async () => {
             const email = localStorage.getItem('userEmail');
             if (email) {
                 try {
-                    const response = await fetch(`/api/user?email=${encodeURIComponent(email)}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        // Mix with mock user to ensure we have ids and other fields not in the popup
+                    // Fetch profile info
+                    const userResponse = await fetch(`/api/user?email=${encodeURIComponent(email)}`);
+                    if (userResponse.ok) {
+                        const data = await userResponse.json();
                         setUserProfile(prev => ({
                             ...prev,
                             ...data,
-                            // Ensure addresses exist if the DB user doesn't have them yet
+                            joinedAt: data.joinedAt || prev.joinedAt,
                             addresses: data.addresses || prev.addresses
                         }));
                     }
+
+                    // Fetch orders
+                    const ordersResponse = await fetch(`/api/orders?email=${encodeURIComponent(email)}`);
+                    if (ordersResponse.ok) {
+                        const ordersData = await ordersResponse.json();
+                        setOrders(ordersData);
+                    }
                 } catch (error) {
-                    console.error('Error fetching user:', error);
+                    console.error('Error fetching data:', error);
                 }
             }
             setIsLoading(false);
@@ -105,14 +116,11 @@ export default function ProfilePage() {
         setIsEditModalOpen(false);
     };
 
-    const handleSaveAddress = (addressData: any) => {
+    const handleSaveAddress = async (addressData: any) => {
+        let updatedAddresses;
         if (editingAddress) {
-            setUserProfile(prev => ({
-                ...prev,
-                addresses: prev.addresses.map(a => a.id === editingAddress.id ? { ...addressData, id: a.id } : a)
-            }));
+            updatedAddresses = userProfile.addresses.map(a => a.id === editingAddress.id ? { ...addressData, id: a.id } : a);
         } else {
-            // Generate a string ID like "addr_N"
             const maxId = userProfile.addresses.reduce((max, addr) => {
                 const num = parseInt(addr.id.split('_')[1]);
                 return isNaN(num) ? max : Math.max(max, num);
@@ -120,21 +128,53 @@ export default function ProfilePage() {
             const newAddress = {
                 ...addressData,
                 id: `addr_${maxId + 1}`,
+                isDefault: userProfile.addresses.length === 0
             };
-            setUserProfile(prev => ({
-                ...prev,
-                addresses: [...prev.addresses, newAddress]
-            }));
+            updatedAddresses = [...userProfile.addresses, newAddress];
         }
-        setIsAddressModalOpen(false);
-        setEditingAddress(null);
-    };
 
-    const handleRemoveAddress = (id: string) => {
         setUserProfile(prev => ({
             ...prev,
-            addresses: prev.addresses.filter(a => a.id !== id)
+            addresses: updatedAddresses
         }));
+        setIsAddressModalOpen(false);
+        setEditingAddress(null);
+
+        // Persist to DB
+        const email = localStorage.getItem('userEmail');
+        if (email) {
+            try {
+                await fetch('/api/user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, addresses: updatedAddresses })
+                });
+            } catch (error) {
+                console.error('Error persisting address:', error);
+            }
+        }
+    };
+
+    const handleRemoveAddress = async (id: string) => {
+        const updatedAddresses = userProfile.addresses.filter(a => a.id !== id);
+        setUserProfile(prev => ({
+            ...prev,
+            addresses: updatedAddresses
+        }));
+
+        // Persist to DB
+        const email = localStorage.getItem('userEmail');
+        if (email) {
+            try {
+                await fetch('/api/user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, addresses: updatedAddresses })
+                });
+            } catch (error) {
+                console.error('Error removing address:', error);
+            }
+        }
     };
 
     const handleEditAddress = (address: any) => {
@@ -166,6 +206,8 @@ export default function ProfilePage() {
     const triggerAvatarUpload = () => {
         fileInputRef.current?.click();
     };
+
+    if (!isMounted) return null;
 
     return (
         <div className="max-w-[1200px] mx-auto pb-8 px-4 md:px-0 relative">
@@ -220,7 +262,9 @@ export default function ProfilePage() {
                         ))}
                         <button
                             onClick={() => {
+                                clearWishlist();
                                 localStorage.removeItem('userEmail');
+                                localStorage.removeItem('ecoyaan_wishlist');
                                 router.push("/");
                             }}
                             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all mt-4"
@@ -284,42 +328,6 @@ export default function ProfilePage() {
                                         </div>
                                     </div>
 
-                                    {/* Recent Orders Overview */}
-                                    <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm overflow-hidden">
-                                        <div className="px-8 py-6 border-b border-stone-50 flex items-center justify-between">
-                                            <h3 className="font-black text-stone-900 text-lg">Recent Orders</h3>
-                                            <button onClick={() => setActiveTab("orders")} className="text-sm font-bold text-stone-400 hover:text-stone-900 transition-colors">See all</button>
-                                        </div>
-                                        <div className="divide-y divide-stone-50">
-                                            {orders.slice(0, 2).map((order) => (
-                                                <div key={order.id} className="p-6 hover:bg-stone-50/50 transition-colors group">
-                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center text-stone-400 group-hover:bg-white group-hover:shadow-md transition-all">
-                                                                <Package className="w-6 h-6" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-bold text-stone-900">Order #{order.id}</p>
-                                                                <p className="text-xs text-stone-400 font-medium">{order.date} • {order.items.length} items</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-6">
-                                                            <div className="text-right">
-                                                                <p className="font-black text-stone-900">₹{order.total}</p>
-                                                                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                                                                    }`}>
-                                                                    {order.status}
-                                                                </span>
-                                                            </div>
-                                                            <ChevronRight className="w-5 h-5 text-stone-300 group-hover:text-stone-900 transition-colors" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Personal Info Card */}
                                     <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm p-8">
                                         <div className="flex items-center justify-between mb-8">
                                             <h3 className="font-black text-stone-900 text-lg">Personal Information</h3>
@@ -349,6 +357,57 @@ export default function ProfilePage() {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Recent Orders Overview */}
+                                    <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm overflow-hidden">
+                                        <div className="px-8 py-6 border-b border-stone-50 flex items-center justify-between">
+                                            <h3 className="font-black text-stone-900 text-lg">Recent Orders</h3>
+                                            <button onClick={() => setActiveTab("orders")} className="text-sm font-bold text-stone-400 hover:text-stone-900 transition-colors">See all</button>
+                                        </div>
+                                        <div className="divide-y divide-stone-50">
+                                            {orders.length === 0 ? (
+                                                <div className="p-12 text-center">
+                                                    <Package className="w-12 h-12 text-stone-100 mx-auto mb-4" />
+                                                    <p className="font-bold text-stone-300">No recent orders found.</p>
+                                                    <button
+                                                        onClick={() => router.push('/')}
+                                                        className="mt-4 text-sm font-black text-green-600 hover:underline"
+                                                    >
+                                                        Start Shopping
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                orders.slice(0, 2).map((order) => (
+                                                    <div key={order._id || order.id} className="p-6 hover:bg-stone-50/50 transition-colors group">
+                                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center text-stone-400 group-hover:bg-white group-hover:shadow-md transition-all">
+                                                                    <Package className="w-6 h-6" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-bold text-stone-900">Order #{order.id || order._id?.substring(0, 8)}</p>
+                                                                    <p className="text-xs text-stone-400 font-medium">{order.date} • {order.items.length} items</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-6">
+                                                                <div className="text-right">
+                                                                    <p className="font-black text-stone-900">₹{order.total}</p>
+                                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                                                        }`}>
+                                                                        {order.status}
+                                                                    </span>
+                                                                </div>
+                                                                <ChevronRight className="w-5 h-5 text-stone-300 group-hover:text-stone-900 transition-colors" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Personal Info Card */}
+
                                 </div>
                             )}
 
@@ -377,8 +436,8 @@ export default function ProfilePage() {
                                             </div>
                                             <p className="font-bold text-stone-400">No orders found for this period.</p>
                                         </div>
-                                    ) : filteredOrders.map((order) => (
-                                        <div key={order.id} className="bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden">
+                                    ) : filteredOrders.map((order: any) => (
+                                        <div key={order._id || order.id} className="bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden">
                                             <div className="p-6 border-b border-stone-50 bg-stone-50/30 flex flex-wrap items-center justify-between gap-4">
                                                 <div className="flex gap-8">
                                                     <div className="space-y-1">
@@ -407,7 +466,7 @@ export default function ProfilePage() {
                                                     <p className="text-sm font-black text-stone-900">{order.status}</p>
                                                 </div>
                                                 <div className="space-y-4">
-                                                    {order.items.map((item, idx) => (
+                                                    {order.items.map((item: any, idx: number) => (
                                                         <div key={idx} className="flex gap-4">
                                                             <div className="w-16 h-16 bg-stone-50 rounded-xl overflow-hidden relative shrink-0 border border-stone-100">
                                                                 <Image src={item.image} alt={item.product_name} fill className="object-cover" />
@@ -609,8 +668,25 @@ function EditProfileModal({ isOpen, onClose, user, onSave }: EditProfileModalPro
         email: user.email,
         phone: user.phone
     });
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     if (!isOpen) return null;
+
+    const validate = () => {
+        const newErrors: Record<string, string> = {};
+        if (!formData.name.trim()) newErrors.name = "Full Name is required";
+        if (!formData.email.trim()) newErrors.email = "Email Address is required";
+        if (!/^\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email format";
+        if (!/^\d{10}$/.test(formData.phone)) newErrors.phone = "Phone number must be exactly 10 digits";
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSave = () => {
+        if (validate()) {
+            onSave(formData);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -630,28 +706,31 @@ function EditProfileModal({ isOpen, onClose, user, onSave }: EditProfileModalPro
                         <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Full Name</label>
                         <input
                             type="text"
-                            className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                            className={`w-full bg-stone-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.name ? 'border-red-500/50 focus:ring-red-500/20' : 'focus:ring-green-500/20'}`}
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         />
+                        {errors.name && <p className="text-[10px] font-bold text-red-500 ml-1">{errors.name}</p>}
                     </div>
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Email Address</label>
                         <input
                             type="email"
-                            className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                            className={`w-full bg-stone-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.email ? 'border-red-500/50 focus:ring-red-500/20' : 'focus:ring-green-500/20'}`}
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         />
+                        {errors.email && <p className="text-[10px] font-bold text-red-500 ml-1">{errors.email}</p>}
                     </div>
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Phone Number</label>
                         <input
                             type="text"
-                            className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                            className={`w-full bg-stone-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.phone ? 'border-red-500/50 focus:ring-red-500/20' : 'focus:ring-green-500/20'}`}
                             value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                         />
+                        {errors.phone && <p className="text-[10px] font-bold text-red-500 ml-1">{errors.phone}</p>}
                     </div>
                 </div>
 
@@ -663,7 +742,7 @@ function EditProfileModal({ isOpen, onClose, user, onSave }: EditProfileModalPro
                         Cancel
                     </button>
                     <button
-                        onClick={() => onSave(formData)}
+                        onClick={handleSave}
                         className="flex-1 px-6 py-4 rounded-2xl text-sm font-black text-white bg-stone-900 hover:bg-black shadow-xl shadow-stone-200 transition-all"
                     >
                         Save Changes
@@ -684,6 +763,7 @@ function AddressModal({ isOpen, onClose, address, onSave }: { isOpen: boolean; o
         state: address?.state || "",
         isDefault: address?.isDefault || false
     });
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Update form when address prop changes
     React.useEffect(() => {
@@ -708,7 +788,26 @@ function AddressModal({ isOpen, onClose, address, onSave }: { isOpen: boolean; o
                 isDefault: false
             });
         }
+        setErrors({});
     }, [address, isOpen]);
+
+    const validate = () => {
+        const newErrors: Record<string, string> = {};
+        if (!formData.fullName.trim()) newErrors.fullName = "Full Name is required";
+        if (!/^\d{10}$/.test(formData.phone)) newErrors.phone = "Phone number must be exactly 10 digits";
+        if (!formData.pinCode.trim()) newErrors.pinCode = "PIN Code is required";
+        if (!/^\d{6}$/.test(formData.pinCode.trim())) newErrors.pinCode = "PIN Code must be 6 digits";
+        if (!formData.city.trim()) newErrors.city = "City is required";
+        if (!formData.state.trim()) newErrors.state = "State is required";
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSave = () => {
+        if (validate()) {
+            onSave(formData);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -743,11 +842,12 @@ function AddressModal({ isOpen, onClose, address, onSave }: { isOpen: boolean; o
                             <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Full Name</label>
                             <input
                                 type="text"
-                                className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                                className={`w-full bg-stone-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.fullName ? 'border-red-500/50 focus:ring-red-500/20' : 'focus:ring-green-500/20'}`}
                                 placeholder="Enter full name"
                                 value={formData.fullName}
                                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                             />
+                            {errors.fullName && <p className="text-[10px] font-bold text-red-500 ml-1">{errors.fullName}</p>}
                         </div>
                     </div>
 
@@ -756,21 +856,23 @@ function AddressModal({ isOpen, onClose, address, onSave }: { isOpen: boolean; o
                             <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Phone Number</label>
                             <input
                                 type="text"
-                                className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
-                                placeholder="+91 00000 00000"
+                                className={`w-full bg-stone-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.phone ? 'border-red-500/50 focus:ring-red-500/20' : 'focus:ring-green-500/20'}`}
+                                placeholder="9876543210"
                                 value={formData.phone}
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                             />
+                            {errors.phone && <p className="text-[10px] font-bold text-red-500 ml-1">{errors.phone}</p>}
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">PIN Code</label>
                             <input
                                 type="text"
-                                className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                                className={`w-full bg-stone-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.pinCode ? 'border-red-500/50 focus:ring-red-500/20' : 'focus:ring-green-500/20'}`}
                                 placeholder="000 000"
                                 value={formData.pinCode}
-                                onChange={(e) => setFormData({ ...formData, pinCode: e.target.value })}
+                                onChange={(e) => setFormData({ ...formData, pinCode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
                             />
+                            {errors.pinCode && <p className="text-[10px] font-bold text-red-500 ml-1">{errors.pinCode}</p>}
                         </div>
                     </div>
 
@@ -779,21 +881,23 @@ function AddressModal({ isOpen, onClose, address, onSave }: { isOpen: boolean; o
                             <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">City</label>
                             <input
                                 type="text"
-                                className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                                className={`w-full bg-stone-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.city ? 'border-red-500/50 focus:ring-red-500/20' : 'focus:ring-green-500/20'}`}
                                 placeholder="City"
                                 value={formData.city}
                                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                             />
+                            {errors.city && <p className="text-[10px] font-bold text-red-500 ml-1">{errors.city}</p>}
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">State</label>
                             <input
                                 type="text"
-                                className="w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                                className={`w-full bg-stone-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.state ? 'border-red-500/50 focus:ring-red-500/20' : 'focus:ring-green-500/20'}`}
                                 placeholder="State"
                                 value={formData.state}
                                 onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                             />
+                            {errors.state && <p className="text-[10px] font-bold text-red-500 ml-1">{errors.state}</p>}
                         </div>
                     </div>
 
@@ -819,7 +923,7 @@ function AddressModal({ isOpen, onClose, address, onSave }: { isOpen: boolean; o
                         Cancel
                     </button>
                     <button
-                        onClick={() => onSave(formData)}
+                        onClick={handleSave}
                         className="flex-1 px-6 py-4 rounded-2xl text-sm font-black text-white bg-stone-900 hover:bg-black shadow-xl shadow-stone-200 transition-all"
                     >
                         Save Address

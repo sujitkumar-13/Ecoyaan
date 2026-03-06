@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Product, WishlistContextType } from "@/types";
+import { Product, WishlistContextType } from "../types";
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
@@ -11,21 +11,44 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         setIsMounted(true);
-        // Load from local storage on mount
-        const savedWishlist = localStorage.getItem('ecoyaan_wishlist');
-        if (savedWishlist) {
-            try {
-                setWishlistItems(JSON.parse(savedWishlist));
-            } catch (error) {
-                console.error("Failed to parse wishlist from local storage", error);
+        const email = typeof window !== 'undefined' ? localStorage.getItem('userEmail') : null;
+
+        if (email) {
+            fetch(`/api/wishlist?email=${encodeURIComponent(email)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        setWishlistItems(data);
+                        localStorage.setItem('ecoyaan_wishlist', JSON.stringify(data));
+                    }
+                })
+                .catch(err => console.error("Failed to fetch wishlist", err));
+        } else {
+            // Load from local storage for guests, or clear if we want it strictly logged-in only
+            const savedWishlist = localStorage.getItem('ecoyaan_wishlist');
+            if (savedWishlist) {
+                try {
+                    setWishlistItems(JSON.parse(savedWishlist));
+                } catch (error) {
+                    console.error("Failed to parse wishlist from local storage", error);
+                }
             }
         }
     }, []);
 
-    // Save to local storage whenever wishlistItems changes
+    // Save to local storage and DB whenever wishlistItems changes
     useEffect(() => {
         if (isMounted) {
             localStorage.setItem('ecoyaan_wishlist', JSON.stringify(wishlistItems));
+
+            const email = localStorage.getItem('userEmail');
+            if (email) {
+                fetch('/api/wishlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, items: wishlistItems })
+                }).catch(err => console.error("Failed to save wishlist", err));
+            }
         }
     }, [wishlistItems, isMounted]);
 
@@ -44,6 +67,11 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         return wishlistItems.some((item) => item.id === productId);
     };
 
+    const clearWishlist = () => {
+        setWishlistItems([]);
+        localStorage.removeItem('ecoyaan_wishlist');
+    };
+
     return (
         <WishlistContext.Provider
             value={{
@@ -51,6 +79,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
                 addToWishlist,
                 removeFromWishlist,
                 isInWishlist,
+                clearWishlist
             }}
         >
             {children}

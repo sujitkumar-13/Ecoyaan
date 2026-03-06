@@ -12,12 +12,20 @@ import React, { useEffect } from "react";
 export default function CartPage() {
     const { cartItems, subtotal } = useCart();
     const router = useRouter();
+    const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
 
     useEffect(() => {
-        if (!localStorage.getItem('userEmail')) {
+        const userEmail = localStorage.getItem('userEmail');
+        if (!userEmail) {
             router.push('/register');
+        } else {
+            setIsCheckingAuth(false);
         }
     }, [router]);
+
+    if (isCheckingAuth) {
+        return null; // Prevent flickering
+    }
 
     const handleCheckout = () => {
         router.push("/shipping");

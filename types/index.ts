@@ -54,6 +54,7 @@ export interface WishlistContextType {
   addToWishlist: (product: Product) => void;
   removeFromWishlist: (productId: number) => void;
   isInWishlist: (productId: number) => boolean;
+  clearWishlist: () => void;
 }
 
 export interface User {

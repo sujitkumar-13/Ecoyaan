@@ -10,12 +10,20 @@ import { useRouter } from "next/navigation";
 export default function WishlistPage() {
     const { wishlistItems } = useWishlist();
     const router = useRouter();
+    const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
 
     useEffect(() => {
-        if (!localStorage.getItem('userEmail')) {
+        const userEmail = localStorage.getItem('userEmail');
+        if (!userEmail) {
             router.push('/register');
+        } else {
+            setIsCheckingAuth(false);
         }
     }, [router]);
+
+    if (isCheckingAuth) {
+        return null; // Prevent flickering
+    }
 
     return (
         <div className="max-w-[1400px] mx-auto py-8">

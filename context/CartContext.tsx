@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { CartItem, CartData, ShippingAddress, CartContextType } from "@/types";
+import { CartItem, CartData, ShippingAddress, CartContextType } from "../types";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 

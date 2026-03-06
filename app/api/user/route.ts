@@ -8,9 +8,32 @@ export async function POST(request: Request) {
         const db = client.db("ecoyaan");
 
         // We'll upsert based on email for now as a simple identifier
+        const { email, ...updateData } = body;
+
         const result = await db.collection("users").updateOne(
-            { email: body.email },
-            { $set: { ...body, updatedAt: new Date() } },
+            { email: email },
+            {
+                $set: { ...updateData, updatedAt: new Date() },
+                $setOnInsert: {
+                    joinedAt: new Date().toLocaleDateString('en-US', {
+                        month: 'long',
+                        year: 'numeric'
+                    }),
+                    addresses: body.address && typeof body.address === 'string' ? [
+                        {
+                            id: Math.random().toString(36).substring(7),
+                            fullName: body.name || "User",
+                            email: email,
+                            phone: body.phone || "",
+                            city: "",
+                            state: "",
+                            pinCode: "",
+                            isDefault: true,
+                            label: "Home"
+                        }
+                    ] : []
+                }
+            },
             { upsert: true }
         );
 

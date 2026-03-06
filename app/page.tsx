@@ -4,11 +4,28 @@ import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
 import { getProducts } from "@/lib/products";
 import { useCart } from "@/context/CartContext";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const products = getProducts();
   const { cartItems } = useCart();
-  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem('userEmail'));
+  }, []);
+
+  const cartCount = isLoggedIn ? cartItems.reduce((total, item) => total + item.quantity, 0) : 0;
+
+  const handleCartClick = () => {
+    if (!isLoggedIn) {
+      router.push('/register');
+    } else {
+      router.push('/cart');
+    }
+  };
 
   return (
     <div className="w-full">
@@ -40,13 +57,13 @@ export default function Home() {
               Shop Now
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
             </Link>
-            <Link
-              href="/cart"
+            <button
+              onClick={handleCartClick}
               className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white px-8 py-3.5 rounded-xl font-medium transition-colors text-lg flex items-center justify-center gap-2"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /></svg>
               View Cart {cartCount > 0 ? `(${cartCount})` : ''}
-            </Link>
+            </button>
           </div>
         </div>
       </section>
@@ -104,13 +121,13 @@ export default function Home() {
       <section className="max-w-[1100px] mx-auto bg-stone-100 rounded-3xl p-8 text-center mb-8 border border-stone-200">
         <h3 className="text-2xl font-bold text-stone-900 mb-2">Ready to check out?</h3>
         <p className="text-stone-500 mb-6">Review your items and proceed to shipping.</p>
-        <Link
-          href="/cart"
+        <button
+          onClick={handleCartClick}
           className="inline-flex bg-green-600 hover:bg-green-700 text-white font-medium px-8 py-3 rounded-xl transition-colors items-center gap-2"
         >
           Go to Cart {cartCount > 0 ? `(${cartCount} items)` : ''}
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 19 7-7-7-7" /></svg>
-        </Link>
+        </button>
       </section>
     </div>
   );
