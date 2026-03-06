@@ -1,7 +1,6 @@
 # 🌿 Ecoyaan — Sustainability Made Easy
 
 <div align="center">
-  <img src="public/ecoyaan-logo.png" alt="Ecoyaan Logo" width="120" />
   <p><strong>A full-stack e-commerce platform for eco-friendly and sustainable products</strong></p>
   <p>Built with Next.js 16 · React 19 · MongoDB · TypeScript · Tailwind CSS v4</p>
 </div>
