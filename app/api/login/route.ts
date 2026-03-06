@@ -1,46 +1,54 @@
-import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { NextRequest, NextResponse } from "next/server";
+import clientPromise from "@/lib/mongodb";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-default-secret-key-please-change';
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
     try {
-        const body = await request.json();
-        const client = await clientPromise;
-        const db = client.db("ecoyaan");
+        const body = await req.json();
+        const { email, password } = body;
 
-        const user = await db.collection("users").findOne({
-            email: body.email
-        });
-
-        if (user) {
-            let isMatch = false;
-            // Handle both bcrypt hashes and plain text legacy passwords
-            if (user.password && user.password.startsWith('$2')) {
-                isMatch = await bcrypt.compare(body.password, user.password);
-            } else {
-                isMatch = user.password === body.password;
-            }
-
-            if (isMatch) {
-                // Generate JWT token with 7-day expiration
-                const token = jwt.sign(
-                    { email: user.email, id: user._id },
-                    JWT_SECRET,
-                    { expiresIn: '7d' }
-                );
-
-                return NextResponse.json({ success: true, email: user.email, token });
-            } else {
-                return NextResponse.json({ success: false, error: 'Invalid email or password' }, { status: 401 });
-            }
-        } else {
-            return NextResponse.json({ success: false, error: 'Invalid email or password' }, { status: 401 });
+        if (!email || !password) {
+            return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
         }
-    } catch (e) {
-        console.error(e);
-        return NextResponse.json({ success: false, error: 'Failed to login' }, { status: 500 });
+
+        const client = await clientPromise;
+        const db = client.db();
+        const usersCollection = db.collection("users");
+
+        // Find user by email
+        const user = await usersCollection.findOne({ email });
+        if (!user) {
+            return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+        }
+
+        // Check password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+        }
+
+        // Generate token
+        const token = jwt.sign(
+            { userId: user._id, email: user.email },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        // Calculate expiry for localStorage (24 hours)
+        const expiry = new Date().getTime() + 24 * 60 * 60 * 1000;
+
+        return NextResponse.json({
+            message: "Login successful",
+            token,
+            userEmail: user.email,
+            tokenExpiry: expiry.toString()
+        }, { status: 200 });
+
+    } catch (error) {
+        console.error("Login API error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
