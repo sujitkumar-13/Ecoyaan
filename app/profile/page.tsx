@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
@@ -39,6 +39,32 @@ export default function ProfilePage() {
         savePaymentMethods: false
     });
     const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            const email = localStorage.getItem('userEmail');
+            if (email) {
+                try {
+                    const response = await fetch(`/api/user?email=${encodeURIComponent(email)}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Mix with mock user to ensure we have ids and other fields not in the popup
+                        setUserProfile(prev => ({
+                            ...prev,
+                            ...data,
+                            // Ensure addresses exist if the DB user doesn't have them yet
+                            addresses: data.addresses || prev.addresses
+                        }));
+                    }
+                } catch (error) {
+                    console.error('Error fetching user:', error);
+                }
+            }
+            setIsLoading(false);
+        };
+        fetchUserData();
+    }, []);
 
     const filteredOrders = orders.filter(order => {
         if (orderFilter === "All Orders") return true;
@@ -59,11 +85,23 @@ export default function ProfilePage() {
         { id: "settings", label: "Settings", icon: Settings },
     ];
 
-    const handleSaveProfile = (updatedData: { name: string; email: string; phone: string }) => {
-        setUserProfile(prev => ({
-            ...prev,
-            ...updatedData
-        }));
+    const handleSaveProfile = async (updatedData: { name: string; email: string; phone: string }) => {
+        try {
+            const response = await fetch('/api/user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...userProfile, ...updatedData })
+            });
+            if (response.ok) {
+                setUserProfile(prev => ({
+                    ...prev,
+                    ...updatedData
+                }));
+                localStorage.setItem('userEmail', updatedData.email);
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+        }
         setIsEditModalOpen(false);
     };
 
@@ -111,10 +149,13 @@ export default function ProfilePage() {
         }));
     };
 
-    const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             const imageUrl = URL.createObjectURL(file);
+            // In a real app, you'd upload the file to storage and get a URL
+            // For now, we'll just update state. Since we can't easily save blobs to Mongo 
+            // without a storage bucket, we'll just update locally.
             setUserProfile(prev => ({
                 ...prev,
                 avatar: imageUrl
@@ -186,336 +227,342 @@ export default function ProfilePage() {
 
                 {/* Main Content Area */}
                 <main className="flex-1 w-full min-h-[600px]">
-
-                    {/* Overview Tab */}
-                    {activeTab === "overview" && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            {/* Stats Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="bg-white p-6 rounded-3xl border border-stone-100 shadow-sm">
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="p-3 bg-green-50 rounded-2xl">
-                                            <Package className="w-6 h-6 text-green-600" />
-                                        </div>
-                                        <div>
-                                            <p className="text-2xl font-black text-stone-900">{orders.length}</p>
-                                            <p className="text-xs text-stone-400 font-bold uppercase tracking-wider">Total Orders</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => setActiveTab("orders")} className="text-xs font-bold text-green-600 hover:underline flex items-center gap-1">
-                                        View all orders <ChevronRight className="w-3 h-3" />
-                                    </button>
-                                </div>
-                                <div className="bg-white p-6 rounded-3xl border border-stone-100 shadow-sm">
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="p-3 bg-blue-50 rounded-2xl">
-                                            <Star className="w-6 h-6 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <p className="text-2xl font-black text-stone-900">42</p>
-                                            <p className="text-xs text-stone-400 font-bold uppercase tracking-wider">Eco Points</p>
-                                        </div>
-                                    </div>
-                                    <p className="text-xs text-stone-400 font-medium font-bold">18 points to next level</p>
-                                </div>
-                                <div className="bg-white p-6 rounded-3xl border border-stone-100 shadow-sm">
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="p-3 bg-purple-50 rounded-2xl">
-                                            <CreditCard className="w-6 h-6 text-purple-600" />
-                                        </div>
-                                        <div>
-                                            <p className="text-2xl font-black text-stone-900">₹0</p>
-                                            <p className="text-xs text-stone-400 font-bold uppercase tracking-wider">Wallet Balance</p>
-                                        </div>
-                                    </div>
-                                    <button className="text-xs font-bold text-green-600 hover:underline">Add money</button>
-                                </div>
-                            </div>
-
-                            {/* Recent Orders Overview */}
-                            <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm overflow-hidden">
-                                <div className="px-8 py-6 border-b border-stone-50 flex items-center justify-between">
-                                    <h3 className="font-black text-stone-900 text-lg">Recent Orders</h3>
-                                    <button onClick={() => setActiveTab("orders")} className="text-sm font-bold text-stone-400 hover:text-stone-900 transition-colors">See all</button>
-                                </div>
-                                <div className="divide-y divide-stone-50">
-                                    {orders.slice(0, 2).map((order) => (
-                                        <div key={order.id} className="p-6 hover:bg-stone-50/50 transition-colors group">
-                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center text-stone-400 group-hover:bg-white group-hover:shadow-md transition-all">
-                                                        <Package className="w-6 h-6" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-bold text-stone-900">Order #{order.id}</p>
-                                                        <p className="text-xs text-stone-400 font-medium">{order.date} • {order.items.length} items</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-6">
-                                                    <div className="text-right">
-                                                        <p className="font-black text-stone-900">₹{order.total}</p>
-                                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                                                            }`}>
-                                                            {order.status}
-                                                        </span>
-                                                    </div>
-                                                    <ChevronRight className="w-5 h-5 text-stone-300 group-hover:text-stone-900 transition-colors" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Personal Info Card */}
-                            <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm p-8">
-                                <div className="flex items-center justify-between mb-8">
-                                    <h3 className="font-black text-stone-900 text-lg">Personal Information</h3>
-                                    <button
-                                        onClick={() => setIsEditModalOpen(true)}
-                                        className="text-xs font-bold bg-stone-100 text-stone-600 px-4 py-2 rounded-xl hover:bg-stone-200 transition-colors"
-                                    >
-                                        Edit Profile
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Full Name</label>
-                                        <p className="font-bold text-stone-900">{userProfile.name}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Email Address</label>
-                                        <p className="font-bold text-stone-900">{userProfile.email}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Phone Number</label>
-                                        <p className="font-bold text-stone-900">{userProfile.phone}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Date Joined</label>
-                                        <p className="font-bold text-stone-900">{userProfile.joinedAt}</p>
-                                    </div>
-                                </div>
-                            </div>
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                            <div className="w-8 h-8 border-4 border-[#008C4A] border-t-transparent rounded-full animate-spin"></div>
                         </div>
-                    )}
-
-                    {/* Orders Tab */}
-                    {activeTab === "orders" && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-2xl font-black text-stone-900">Order History</h2>
-                                <div className="flex gap-2">
-                                    <select
-                                        value={orderFilter}
-                                        onChange={(e) => setOrderFilter(e.target.value)}
-                                        className="bg-white border border-stone-100 rounded-xl px-4 py-2 text-sm font-bold text-stone-600 outline-none cursor-pointer hover:border-green-200 transition-colors"
-                                    >
-                                        <option>All Orders</option>
-                                        <option>Past 3 Months</option>
-                                        <option>2023</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            {filteredOrders.length === 0 ? (
-                                <div className="bg-white rounded-3xl border border-stone-100 p-12 text-center">
-                                    <div className="w-16 h-16 bg-stone-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                        <Package className="w-8 h-8 text-stone-200" />
-                                    </div>
-                                    <p className="font-bold text-stone-400">No orders found for this period.</p>
-                                </div>
-                            ) : filteredOrders.map((order) => (
-                                <div key={order.id} className="bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden">
-                                    <div className="p-6 border-b border-stone-50 bg-stone-50/30 flex flex-wrap items-center justify-between gap-4">
-                                        <div className="flex gap-8">
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Order Placed</p>
-                                                <p className="text-sm font-bold text-stone-700">{order.date}</p>
+                    ) : (
+                        <>
+                            {/* Overview Tab */}
+                            {activeTab === "overview" && (
+                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    {/* Stats Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="bg-white p-6 rounded-3xl border border-stone-100 shadow-sm">
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="p-3 bg-green-50 rounded-2xl">
+                                                    <Package className="w-6 h-6 text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-2xl font-black text-stone-900">{orders.length}</p>
+                                                    <p className="text-xs text-stone-400 font-bold uppercase tracking-wider">Total Orders</p>
+                                                </div>
                                             </div>
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Total</p>
-                                                <p className="text-sm font-black text-stone-900">₹{order.total}</p>
-                                            </div>
-                                            <div className="space-y-1 hidden sm:block">
-                                                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Ship To</p>
-                                                <p className="text-sm font-bold text-stone-700">{order.shippingAddress.fullName}</p>
-                                            </div>
+                                            <button onClick={() => setActiveTab("orders")} className="text-xs font-bold text-green-600 hover:underline flex items-center gap-1">
+                                                View all orders <ChevronRight className="w-3 h-3" />
+                                            </button>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Order ID</p>
-                                            <p className="text-sm font-black text-stone-900 flex items-center gap-1">
-                                                #{order.id} <ExternalLink className="w-3 h-3 text-stone-300" />
-                                            </p>
+                                        <div className="bg-white p-6 rounded-3xl border border-stone-100 shadow-sm">
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="p-3 bg-blue-50 rounded-2xl">
+                                                    <Star className="w-6 h-6 text-blue-600" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-2xl font-black text-stone-900">42</p>
+                                                    <p className="text-xs text-stone-400 font-bold uppercase tracking-wider">Eco Points</p>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-stone-400 font-medium font-bold">18 points to next level</p>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-3xl border border-stone-100 shadow-sm">
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="p-3 bg-purple-50 rounded-2xl">
+                                                    <CreditCard className="w-6 h-6 text-purple-600" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-2xl font-black text-stone-900">₹0</p>
+                                                    <p className="text-xs text-stone-400 font-bold uppercase tracking-wider">Wallet Balance</p>
+                                                </div>
+                                            </div>
+                                            <button className="text-xs font-bold text-green-600 hover:underline">Add money</button>
                                         </div>
                                     </div>
-                                    <div className="p-6">
-                                        <div className="flex items-center gap-2 mb-6">
-                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                            <p className="text-sm font-black text-stone-900">{order.status}</p>
+
+                                    {/* Recent Orders Overview */}
+                                    <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm overflow-hidden">
+                                        <div className="px-8 py-6 border-b border-stone-50 flex items-center justify-between">
+                                            <h3 className="font-black text-stone-900 text-lg">Recent Orders</h3>
+                                            <button onClick={() => setActiveTab("orders")} className="text-sm font-bold text-stone-400 hover:text-stone-900 transition-colors">See all</button>
                                         </div>
-                                        <div className="space-y-4">
-                                            {order.items.map((item, idx) => (
-                                                <div key={idx} className="flex gap-4">
-                                                    <div className="w-16 h-16 bg-stone-50 rounded-xl overflow-hidden relative shrink-0 border border-stone-100">
-                                                        <Image src={item.image} alt={item.product_name} fill className="object-cover" />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <h4
-                                                            onClick={() => router.push(`/products/${item.product_id}`)}
-                                                            className="text-sm font-bold text-stone-900 hover:text-green-600 transition-colors cursor-pointer"
-                                                        >
-                                                            {item.product_name}
-                                                        </h4>
-                                                        <p className="text-xs text-stone-400 mt-1">Qty: {item.quantity}</p>
-                                                        <div className="flex gap-4 mt-3">
-                                                            <button
-                                                                onClick={() => {
-                                                                    addToCart({
-                                                                        product_id: item.product_id,
-                                                                        product_name: item.product_name,
-                                                                        product_price: item.product_price,
-                                                                        image: item.image,
-                                                                        quantity: 1
-                                                                    });
-                                                                    router.push("/cart");
-                                                                }}
-                                                                className="text-[10px] font-black uppercase tracking-widest bg-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-black transition-colors"
-                                                            >
-                                                                Buy it again
-                                                            </button>
-                                                            <button
-                                                                onClick={() => router.push(`/products/${item.product_id}`)}
-                                                                className="text-[10px] font-black uppercase tracking-widest bg-white border border-stone-100 text-stone-600 px-3 py-1.5 rounded-lg hover:bg-stone-50 transition-colors"
-                                                            >
-                                                                View item
-                                                            </button>
+                                        <div className="divide-y divide-stone-50">
+                                            {orders.slice(0, 2).map((order) => (
+                                                <div key={order.id} className="p-6 hover:bg-stone-50/50 transition-colors group">
+                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center text-stone-400 group-hover:bg-white group-hover:shadow-md transition-all">
+                                                                <Package className="w-6 h-6" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-bold text-stone-900">Order #{order.id}</p>
+                                                                <p className="text-xs text-stone-400 font-medium">{order.date} • {order.items.length} items</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-6">
+                                                            <div className="text-right">
+                                                                <p className="font-black text-stone-900">₹{order.total}</p>
+                                                                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                                                    }`}>
+                                                                    {order.status}
+                                                                </span>
+                                                            </div>
+                                                            <ChevronRight className="w-5 h-5 text-stone-300 group-hover:text-stone-900 transition-colors" />
                                                         </div>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
 
-                    {/* Addresses Tab */}
-                    {activeTab === "addresses" && (
-                        <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                            <div className="flex items-center justify-between mb-8">
-                                <h2 className="text-2xl font-black text-stone-900">My Addresses</h2>
-                                <button
-                                    onClick={() => {
-                                        setEditingAddress(null);
-                                        setIsAddressModalOpen(true);
-                                    }}
-                                    className="bg-stone-900 text-white px-6 py-3 rounded-2xl font-black text-sm hover:bg-black transition-all flex items-center gap-2 shadow-xl shadow-stone-100"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Add New Address
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {userProfile.addresses.map((addr) => (
-                                    <div key={addr.id} className={`bg-white rounded-[2rem] border p-8 flex flex-col justify-between ${addr.isDefault ? 'border-green-200 shadow-lg shadow-green-50/20' : 'border-stone-100 shadow-sm'}`}>
-                                        <div>
-                                            <div className="flex items-center justify-between mb-6">
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${addr.isDefault ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-600'}`}>
-                                                        {addr.label}
-                                                    </span>
-                                                    {addr.isDefault && <span className="text-[10px] font-black uppercase tracking-widest text-stone-300">Default</span>}
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <button className="p-2 text-stone-400 hover:text-stone-900 transition-colors"><Settings className="w-4 h-4" /></button>
-                                                </div>
-                                            </div>
-                                            <h3 className="font-black text-stone-900 mb-2">{addr.fullName}</h3>
-                                            <div className="text-sm text-stone-500 font-medium space-y-1">
-                                                <p>{addr.city}, {addr.state}</p>
-                                                <p>{addr.pinCode}</p>
-                                                <p className="pt-2 text-stone-400">{addr.phone}</p>
-                                            </div>
-                                        </div>
-                                        <div className="mt-8 flex gap-3">
+                                    {/* Personal Info Card */}
+                                    <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm p-8">
+                                        <div className="flex items-center justify-between mb-8">
+                                            <h3 className="font-black text-stone-900 text-lg">Personal Information</h3>
                                             <button
-                                                onClick={() => handleEditAddress(addr)}
-                                                className="flex-1 bg-stone-50 text-stone-800 text-xs font-bold py-3 rounded-xl hover:bg-stone-100 transition-colors flex items-center justify-center gap-2"
+                                                onClick={() => setIsEditModalOpen(true)}
+                                                className="text-xs font-bold bg-stone-100 text-stone-600 px-4 py-2 rounded-xl hover:bg-stone-200 transition-colors"
                                             >
-                                                <Edit3 className="w-3 h-3" /> Edit
+                                                Edit Profile
                                             </button>
-                                            {!addr.isDefault && (
-                                                <button
-                                                    onClick={() => handleRemoveAddress(addr.id)}
-                                                    className="flex-1 bg-white border border-stone-100 text-red-500 text-xs font-bold py-3 rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
-                                                >
-                                                    <Trash2 className="w-3 h-3" /> Remove
-                                                </button>
-                                            )}
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Settings Tab */}
-                    {activeTab === "settings" && (
-                        <div className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
-                            <div className="p-8 border-b border-stone-50">
-                                <h2 className="text-2xl font-black text-stone-900">Account Settings</h2>
-                                <p className="text-sm text-stone-400 font-medium mt-1">Manage your account preferences and security.</p>
-                            </div>
-                            <div className="p-4 sm:p-8 space-y-8">
-                                <section>
-                                    <h3 className="text-xs font-black text-stone-300 uppercase tracking-[0.2em] mb-6">Preferences</h3>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-4 bg-stone-50/50 rounded-2xl">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-2.5 bg-white rounded-xl shadow-sm"><Bell className="w-5 h-5 text-stone-400" /></div>
-                                                <div>
-                                                    <p className="font-bold text-stone-900 text-sm">Push Notifications</p>
-                                                    <p className="text-xs text-stone-400 font-medium">Receive updates about your orders and offers.</p>
-                                                </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Full Name</label>
+                                                <p className="font-bold text-stone-900">{userProfile.name}</p>
                                             </div>
-                                            <div
-                                                onClick={() => handleToggleSetting('pushNotifications')}
-                                                className={`w-12 h-6 rounded-full relative p-1 cursor-pointer transition-colors ${settings.pushNotifications ? 'bg-green-500' : 'bg-stone-200'}`}
-                                            >
-                                                <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${settings.pushNotifications ? 'right-1' : 'left-1'}`}></div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Email Address</label>
+                                                <p className="font-bold text-stone-900">{userProfile.email}</p>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center justify-between p-4 bg-stone-50/50 rounded-2xl">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-2.5 bg-white rounded-xl shadow-sm"><CreditCard className="w-5 h-5 text-stone-400" /></div>
-                                                <div>
-                                                    <p className="font-bold text-stone-900 text-sm">Save Payment Methods</p>
-                                                    <p className="text-xs text-stone-400 font-medium">Fast checkout by saving your card details securely.</p>
-                                                </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Phone Number</label>
+                                                <p className="font-bold text-stone-900">{userProfile.phone}</p>
                                             </div>
-                                            <div
-                                                onClick={() => handleToggleSetting('savePaymentMethods')}
-                                                className={`w-12 h-6 rounded-full relative p-1 cursor-pointer transition-colors ${settings.savePaymentMethods ? 'bg-green-500' : 'bg-stone-200'}`}
-                                            >
-                                                <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${settings.savePaymentMethods ? 'right-1' : 'left-1'}`}></div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Date Joined</label>
+                                                <p className="font-bold text-stone-900">{userProfile.joinedAt}</p>
                                             </div>
                                         </div>
                                     </div>
-                                </section>
+                                </div>
+                            )}
 
-                                <section className="pt-4 border-t border-stone-50 text-center">
-                                    <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest">Account ID: {userProfile.id}</p>
-                                </section>
-                            </div>
-                        </div>
+                            {/* Orders Tab */}
+                            {activeTab === "orders" && (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h2 className="text-2xl font-black text-stone-900">Order History</h2>
+                                        <div className="flex gap-2">
+                                            <select
+                                                value={orderFilter}
+                                                onChange={(e) => setOrderFilter(e.target.value)}
+                                                className="bg-white border border-stone-100 rounded-xl px-4 py-2 text-sm font-bold text-stone-600 outline-none cursor-pointer hover:border-green-200 transition-colors"
+                                            >
+                                                <option>All Orders</option>
+                                                <option>Past 3 Months</option>
+                                                <option>2023</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {filteredOrders.length === 0 ? (
+                                        <div className="bg-white rounded-3xl border border-stone-100 p-12 text-center">
+                                            <div className="w-16 h-16 bg-stone-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                                <Package className="w-8 h-8 text-stone-200" />
+                                            </div>
+                                            <p className="font-bold text-stone-400">No orders found for this period.</p>
+                                        </div>
+                                    ) : filteredOrders.map((order) => (
+                                        <div key={order.id} className="bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden">
+                                            <div className="p-6 border-b border-stone-50 bg-stone-50/30 flex flex-wrap items-center justify-between gap-4">
+                                                <div className="flex gap-8">
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Order Placed</p>
+                                                        <p className="text-sm font-bold text-stone-700">{order.date}</p>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Total</p>
+                                                        <p className="text-sm font-black text-stone-900">₹{order.total}</p>
+                                                    </div>
+                                                    <div className="space-y-1 hidden sm:block">
+                                                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Ship To</p>
+                                                        <p className="text-sm font-bold text-stone-700">{order.shippingAddress.fullName}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Order ID</p>
+                                                    <p className="text-sm font-black text-stone-900 flex items-center gap-1">
+                                                        #{order.id} <ExternalLink className="w-3 h-3 text-stone-300" />
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="p-6">
+                                                <div className="flex items-center gap-2 mb-6">
+                                                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                                    <p className="text-sm font-black text-stone-900">{order.status}</p>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {order.items.map((item, idx) => (
+                                                        <div key={idx} className="flex gap-4">
+                                                            <div className="w-16 h-16 bg-stone-50 rounded-xl overflow-hidden relative shrink-0 border border-stone-100">
+                                                                <Image src={item.image} alt={item.product_name} fill className="object-cover" />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <h4
+                                                                    onClick={() => router.push(`/products/${item.product_id}`)}
+                                                                    className="text-sm font-bold text-stone-900 hover:text-green-600 transition-colors cursor-pointer"
+                                                                >
+                                                                    {item.product_name}
+                                                                </h4>
+                                                                <p className="text-xs text-stone-400 mt-1">Qty: {item.quantity}</p>
+                                                                <div className="flex gap-4 mt-3">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            addToCart({
+                                                                                product_id: item.product_id,
+                                                                                product_name: item.product_name,
+                                                                                product_price: item.product_price,
+                                                                                image: item.image,
+                                                                                quantity: 1
+                                                                            });
+                                                                            router.push("/cart");
+                                                                        }}
+                                                                        className="text-[10px] font-black uppercase tracking-widest bg-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-black transition-colors"
+                                                                    >
+                                                                        Buy it again
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => router.push(`/products/${item.product_id}`)}
+                                                                        className="text-[10px] font-black uppercase tracking-widest bg-white border border-stone-100 text-stone-600 px-3 py-1.5 rounded-lg hover:bg-stone-50 transition-colors"
+                                                                    >
+                                                                        View item
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Addresses Tab */}
+                            {activeTab === "addresses" && (
+                                <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h2 className="text-2xl font-black text-stone-900">My Addresses</h2>
+                                        <button
+                                            onClick={() => {
+                                                setEditingAddress(null);
+                                                setIsAddressModalOpen(true);
+                                            }}
+                                            className="bg-stone-900 text-white px-6 py-3 rounded-2xl font-black text-sm hover:bg-black transition-all flex items-center gap-2 shadow-xl shadow-stone-100"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Add New Address
+                                        </button>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {userProfile.addresses.map((addr) => (
+                                            <div key={addr.id} className={`bg-white rounded-[2rem] border p-8 flex flex-col justify-between ${addr.isDefault ? 'border-green-200 shadow-lg shadow-green-50/20' : 'border-stone-100 shadow-sm'}`}>
+                                                <div>
+                                                    <div className="flex items-center justify-between mb-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${addr.isDefault ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-600'}`}>
+                                                                {addr.label}
+                                                            </span>
+                                                            {addr.isDefault && <span className="text-[10px] font-black uppercase tracking-widest text-stone-300">Default</span>}
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button className="p-2 text-stone-400 hover:text-stone-900 transition-colors"><Settings className="w-4 h-4" /></button>
+                                                        </div>
+                                                    </div>
+                                                    <h3 className="font-black text-stone-900 mb-2">{addr.fullName}</h3>
+                                                    <div className="text-sm text-stone-500 font-medium space-y-1">
+                                                        <p>{addr.city}, {addr.state}</p>
+                                                        <p>{addr.pinCode}</p>
+                                                        <p className="pt-2 text-stone-400">{addr.phone}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-8 flex gap-3">
+                                                    <button
+                                                        onClick={() => handleEditAddress(addr)}
+                                                        className="flex-1 bg-stone-50 text-stone-800 text-xs font-bold py-3 rounded-xl hover:bg-stone-100 transition-colors flex items-center justify-center gap-2"
+                                                    >
+                                                        <Edit3 className="w-3 h-3" /> Edit
+                                                    </button>
+                                                    {!addr.isDefault && (
+                                                        <button
+                                                            onClick={() => handleRemoveAddress(addr.id)}
+                                                            className="flex-1 bg-white border border-stone-100 text-red-500 text-xs font-bold py-3 rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" /> Remove
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Settings Tab */}
+                            {activeTab === "settings" && (
+                                <div className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
+                                    <div className="p-8 border-b border-stone-50">
+                                        <h2 className="text-2xl font-black text-stone-900">Account Settings</h2>
+                                        <p className="text-sm text-stone-400 font-medium mt-1">Manage your account preferences and security.</p>
+                                    </div>
+                                    <div className="p-4 sm:p-8 space-y-8">
+                                        <section>
+                                            <h3 className="text-xs font-black text-stone-300 uppercase tracking-[0.2em] mb-6">Preferences</h3>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between p-4 bg-stone-50/50 rounded-2xl">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="p-2.5 bg-white rounded-xl shadow-sm"><Bell className="w-5 h-5 text-stone-400" /></div>
+                                                        <div>
+                                                            <p className="font-bold text-stone-900 text-sm">Push Notifications</p>
+                                                            <p className="text-xs text-stone-400 font-medium">Receive updates about your orders and offers.</p>
+                                                        </div>
+                                                    </div>
+                                                    <div
+                                                        onClick={() => handleToggleSetting('pushNotifications')}
+                                                        className={`w-12 h-6 rounded-full relative p-1 cursor-pointer transition-colors ${settings.pushNotifications ? 'bg-green-500' : 'bg-stone-200'}`}
+                                                    >
+                                                        <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${settings.pushNotifications ? 'right-1' : 'left-1'}`}></div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between p-4 bg-stone-50/50 rounded-2xl">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="p-2.5 bg-white rounded-xl shadow-sm"><CreditCard className="w-5 h-5 text-stone-400" /></div>
+                                                        <div>
+                                                            <p className="font-bold text-stone-900 text-sm">Save Payment Methods</p>
+                                                            <p className="text-xs text-stone-400 font-medium">Fast checkout by saving your card details securely.</p>
+                                                        </div>
+                                                    </div>
+                                                    <div
+                                                        onClick={() => handleToggleSetting('savePaymentMethods')}
+                                                        className={`w-12 h-6 rounded-full relative p-1 cursor-pointer transition-colors ${settings.savePaymentMethods ? 'bg-green-500' : 'bg-stone-200'}`}
+                                                    >
+                                                        <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${settings.savePaymentMethods ? 'right-1' : 'left-1'}`}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        <section className="pt-4 border-t border-stone-50 text-center">
+                                            <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest">Account ID: {userProfile.id}</p>
+                                        </section>
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
                 </main>
             </div>
 
-            {/* Edit Profile Modal */}
             <EditProfileModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
@@ -523,7 +570,6 @@ export default function ProfilePage() {
                 onSave={handleSaveProfile}
             />
 
-            {/* Address Modal */}
             <AddressModal
                 isOpen={isAddressModalOpen}
                 onClose={() => {
@@ -534,7 +580,6 @@ export default function ProfilePage() {
                 onSave={handleSaveAddress}
             />
 
-            {/* Image Preview Modal */}
             <ImagePreviewModal
                 isOpen={isImagePreviewOpen}
                 onClose={() => setIsImagePreviewOpen(false)}

@@ -5,13 +5,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
-import { Search, Heart, ShoppingCart, User, MapPin } from "lucide-react";
+import { Search, Heart, ShoppingCart, User, MapPin, X, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export function Header() {
     const { cartItems } = useCart();
     const { wishlistItems } = useWishlist();
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
     const pathname = usePathname();
+    const router = useRouter();
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [profileFormData, setProfileFormData] = useState({
+        name: "",
+        age: "",
+        address: "",
+        email: "",
+        gender: ""
+    });
 
     const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
     const wishlistCount = wishlistItems.length;
@@ -120,9 +130,12 @@ export function Header() {
 
                     {/* Right Actions */}
                     <div className="flex items-center gap-6 lg:gap-10 flex-shrink-0">
-                        <Link href="/profile" className="hidden md:flex items-center gap-3 cursor-pointer group hover:text-[#006b38] transition-colors">
+                        <div
+                            onClick={() => setIsProfileModalOpen(true)}
+                            className="hidden md:flex items-center gap-3 cursor-pointer group hover:text-[#006b38] transition-colors"
+                        >
                             <User className="w-7 h-7 text-[#008C4A]" />
-                        </Link>
+                        </div>
 
                         <Link href="/wishlist" className="relative text-[#008C4A] hover:text-[#006b38]">
                             <Heart className="w-7 h-7" strokeWidth={2.5} />
@@ -218,6 +231,179 @@ export function Header() {
                     </div>
                 </div>
             )}
+
+            <ProfileDetailsModal
+                isOpen={isProfileModalOpen}
+                onClose={() => setIsProfileModalOpen(false)}
+                formData={profileFormData}
+                setFormData={setProfileFormData}
+                onSubmit={async () => {
+                    try {
+                        const response = await fetch('/api/user', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(profileFormData)
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            localStorage.setItem('userEmail', profileFormData.email);
+                            setIsProfileModalOpen(false);
+                            router.push("/profile");
+                        } else {
+                            alert('Failed to save user details');
+                        }
+                    } catch (error) {
+                        console.error('Error saving user:', error);
+                        alert('Something went wrong');
+                    }
+                }}
+            />
         </header>
+    );
+}
+
+
+function ProfileDetailsModal({
+    isOpen,
+    onClose,
+    formData,
+    setFormData,
+    onSubmit
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    formData: any;
+    setFormData: (data: any) => void;
+    onSubmit: () => void;
+}) {
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    if (!isOpen) return null;
+
+    const validate = () => {
+        const newErrors: Record<string, string> = {};
+        if (!formData.name.trim()) newErrors.name = "Full name is required";
+        else if (formData.name.trim().length < 2) newErrors.name = "Name is too short";
+
+        if (!formData.age) newErrors.age = "Age is required";
+        else if (parseInt(formData.age) <= 0) newErrors.age = "Invalid age";
+
+        if (!formData.gender) newErrors.gender = "Gender is required";
+
+        if (!formData.email.trim()) newErrors.email = "Email is required";
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid email format";
+
+        if (!formData.address.trim()) newErrors.address = "Address is required";
+        else if (formData.address.trim().length < 10) newErrors.address = "Please enter full address";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleFormSubmit = () => {
+        if (validate()) {
+            onSubmit();
+        }
+    };
+
+    const handleInputChange = (field: string, value: string) => {
+        setFormData({ ...formData, [field]: value });
+        if (errors[field]) {
+            setErrors(prev => {
+                const updated = { ...prev };
+                delete updated[field];
+                return updated;
+            });
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                <div className="p-8 pb-4 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-2xl font-black text-stone-900 tracking-tight">Profile Details</h3>
+                        <p className="text-sm text-stone-400 font-medium">Please enter your information to proceed.</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-stone-50 rounded-full transition-colors text-stone-400">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
+                <div className="p-8 pt-4 space-y-5">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Full Name</label>
+                        <input
+                            type="text"
+                            className={`w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.name ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                            placeholder="Sujit Kumar"
+                            value={formData.name}
+                            onChange={(e) => handleInputChange('name', e.target.value)}
+                        />
+                        {errors.name && <p className="text-[10px] font-bold text-red-500 ml-2 animate-in fade-in slide-in-from-top-1">{errors.name}</p>}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Age</label>
+                            <input
+                                type="number"
+                                className={`w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.age ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                                placeholder="24"
+                                value={formData.age}
+                                onChange={(e) => handleInputChange('age', e.target.value)}
+                            />
+                            {errors.age && <p className="text-[10px] font-bold text-red-500 ml-2 animate-in fade-in slide-in-from-top-1">{errors.age}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Gender</label>
+                            <select
+                                className={`w-full bg-stone-50 border-none rounded-2xl px-6 py-[18px] text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all appearance-none cursor-pointer ${errors.gender ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                                value={formData.gender}
+                                onChange={(e) => handleInputChange('gender', e.target.value)}
+                            >
+                                <option value="" disabled>Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            {errors.gender && <p className="text-[10px] font-bold text-red-500 ml-2 animate-in fade-in slide-in-from-top-1">{errors.gender}</p>}
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Email Address</label>
+                        <input
+                            type="email"
+                            className={`w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.email ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                            placeholder="sujit@example.com"
+                            value={formData.email}
+                            onChange={(e) => handleInputChange('email', e.target.value)}
+                        />
+                        {errors.email && <p className="text-[10px] font-bold text-red-500 ml-2 animate-in fade-in slide-in-from-top-1">{errors.email}</p>}
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Address</label>
+                        <textarea
+                            className={`w-full bg-stone-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all min-h-[100px] resize-none ${errors.address ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                            placeholder="Enter your full address"
+                            value={formData.address}
+                            onChange={(e) => handleInputChange('address', e.target.value)}
+                        />
+                        {errors.address && <p className="text-[10px] font-bold text-red-500 ml-2 animate-in fade-in slide-in-from-top-1">{errors.address}</p>}
+                    </div>
+                </div>
+
+                <div className="p-8 bg-stone-50/50">
+                    <button
+                        onClick={handleFormSubmit}
+                        className="w-full bg-[#008C4A] text-white py-5 rounded-[1.5rem] font-black text-sm hover:bg-[#006b38] transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-100 uppercase tracking-widest"
+                    >
+                        Continue to Profile <ArrowRight className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }
