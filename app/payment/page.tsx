@@ -12,18 +12,19 @@ export default function PaymentPage() {
     const { cartItems, shippingAddress, clearCart } = useCart();
     const router = useRouter();
     const [isProcessing, setIsProcessing] = useState(false);
+    const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-    // Redirect if cart is empty or address is missing
+    // Redirect if cart is empty or address is missing (but not after successful payment)
     useEffect(() => {
-        if (isProcessing) return;
+        if (isProcessing || paymentSuccess) return;
         if (cartItems.length === 0) {
             router.replace("/cart");
         } else if (!shippingAddress) {
             router.replace("/shipping");
         }
-    }, [cartItems, shippingAddress, router, isProcessing]);
+    }, [cartItems, shippingAddress, router, isProcessing, paymentSuccess]);
 
-    if (cartItems.length === 0 || !shippingAddress) return null;
+    if (!paymentSuccess && (cartItems.length === 0 || !shippingAddress)) return null;
 
     const handlePayment = async () => {
         setIsProcessing(true);
@@ -38,8 +39,8 @@ export default function PaymentPage() {
                 userEmail,
                 items: cartItems,
                 shippingAddress,
-                total: cartItems.reduce((acc, item) => acc + item.product_price * item.quantity, 0) + 50, // subtotal + shipping
-                status: 'Delivered', // For demonstration, let's say it's immediately "Delivered" or "Processing"
+                total: cartItems.reduce((acc, item) => acc + item.product_price * item.quantity, 0) + 50,
+                status: 'Processing',
                 createdAt: new Date(),
             };
 
@@ -51,14 +52,15 @@ export default function PaymentPage() {
 
             if (!response.ok) throw new Error('Failed to save order');
 
-            // Clear cart context and move to success page
-            clearCart();
+            // Mark success FIRST to prevent the useEffect from redirecting to /cart
+            setPaymentSuccess(true);
+            // Navigate to success page, then clear the cart
             router.push("/success");
+            clearCart();
         } catch (error) {
             console.error('Payment error:', error);
-            alert('Failed to process payment. Please try again.');
-        } finally {
             setIsProcessing(false);
+            alert('Failed to process payment. Please try again.');
         }
     };
 
@@ -80,9 +82,11 @@ export default function PaymentPage() {
                             <Link href="/shipping" className="text-green-600 text-sm font-bold hover:text-green-700 hover:underline transition-colors">Change</Link>
                         </div>
                         <div className="text-stone-600 flex flex-col gap-1 pl-1">
-                            <p className="font-bold text-stone-900 text-lg">{shippingAddress.fullName}</p>
-                            <p className="text-[15px]">{shippingAddress.email} &bull; {shippingAddress.phone}</p>
-                            <p className="text-[15px]">{shippingAddress.city}, {shippingAddress.state} {shippingAddress.pinCode}</p>
+                            {shippingAddress && <>
+                                <p className="font-bold text-stone-900 text-lg">{shippingAddress.fullName}</p>
+                                <p className="text-[15px]">{shippingAddress.email} &bull; {shippingAddress.phone}</p>
+                                <p className="text-[15px]">{shippingAddress.city}, {shippingAddress.state} {shippingAddress.pinCode}</p>
+                            </>}
                         </div>
                     </div>
 
