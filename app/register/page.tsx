@@ -53,8 +53,7 @@ export default function RegisterPage() {
             } else {
                 setErrors({ server: data.error || "Registration failed" });
             }
-        } catch (error) {
-            console.error('Registration error:', error);
+        } catch {
             setErrors({ server: "Something went wrong. Please try again." });
         } finally {
             setIsLoading(false);

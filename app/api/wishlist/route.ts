@@ -15,9 +15,8 @@ export async function GET(request: Request) {
 
         const wishlist = await db.collection("wishlists").findOne({ email });
         return NextResponse.json(wishlist?.items || []);
-    } catch (e) {
-        console.error(e);
-        return NextResponse.json({ success: false, error: 'Failed to fetch wishlist' }, { status: 500 });
+    } catch {
+        return NextResponse.json({ error: 'Failed to fetch wishlist' }, { status: 500 });
     }
 }
 
@@ -39,8 +38,7 @@ export async function POST(request: Request) {
         );
 
         return NextResponse.json({ success: true });
-    } catch (e) {
-        console.error(e);
-        return NextResponse.json({ success: false, error: 'Failed to save wishlist' }, { status: 500 });
+    } catch {
+        return NextResponse.json({ error: 'Failed to save wishlist' }, { status: 500 });
     }
 }

@@ -52,13 +52,10 @@ export default function PaymentPage() {
 
             if (!response.ok) throw new Error('Failed to save order');
 
-            // Mark success FIRST to prevent the useEffect from redirecting to /cart
             setPaymentSuccess(true);
-            // Navigate to success page, then clear the cart
             router.push("/success");
             clearCart();
-        } catch (error) {
-            console.error('Payment error:', error);
+        } catch {
             setIsProcessing(false);
             alert('Failed to process payment. Please try again.');
         }

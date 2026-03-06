@@ -24,8 +24,8 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
                     setWishlistItems(data);
                     localStorage.setItem('ecoyaan_wishlist', JSON.stringify(data));
                 }
-            } catch (err) {
-                console.error("Failed to fetch wishlist", err);
+            } catch {
+                // Failed silently
             }
         } else {
             // Load from local storage for guests
@@ -33,8 +33,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
             if (savedWishlist) {
                 try {
                     setWishlistItems(JSON.parse(savedWishlist));
-                } catch (error) {
-                    console.error("Failed to parse wishlist from local storage", error);
+                } catch {
                     setWishlistItems([]);
                 }
             } else {
@@ -66,7 +65,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, items: wishlistItems })
-                }).catch(err => console.error("Failed to save wishlist", err));
+                }).catch(() => { });
             }
         }
     }, [wishlistItems, isMounted]);

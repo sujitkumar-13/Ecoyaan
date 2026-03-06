@@ -20,11 +20,8 @@ if (process.env.NODE_ENV === 'development') {
     };
 
     if (!globalWithMongo._mongoClientPromise) {
-        console.log("Creating new MongoDB client...");
         client = new MongoClient(uri, options);
         globalWithMongo._mongoClientPromise = client.connect().catch(err => {
-            console.error("MongoDB Initial Connection Error:", err.message);
-            // Allow retry on next reload
             delete globalWithMongo._mongoClientPromise;
             throw err;
         });

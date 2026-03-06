@@ -11,8 +11,7 @@ export async function POST(request: Request) {
         const order = {
             ...body,
             createdAt: new Date(),
-            status: 'Processing', // Default status for new orders
-            // Ensure date is stored in a readable format for the UI as well
+            status: 'Processing',
             date: new Date().toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
@@ -23,9 +22,8 @@ export async function POST(request: Request) {
         const result = await db.collection("orders").insertOne(order);
 
         return NextResponse.json({ success: true, orderId: result.insertedId });
-    } catch (e) {
-        console.error('Error saving order:', e);
-        return NextResponse.json({ success: false, error: 'Failed to save order' }, { status: 500 });
+    } catch {
+        return NextResponse.json({ error: 'Failed to save order' }, { status: 500 });
     }
 }
 
@@ -47,8 +45,7 @@ export async function GET(request: Request) {
             .toArray();
 
         return NextResponse.json(orders);
-    } catch (e) {
-        console.error('Error fetching orders:', e);
-        return NextResponse.json({ success: false, error: 'Failed to fetch orders' }, { status: 500 });
+    } catch {
+        return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
     }
 }

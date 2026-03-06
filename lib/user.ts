@@ -1,4 +1,4 @@
-import { User, Order } from "@/types";
+import { User } from "@/types";
 
 export function getUser(): User {
     return {
@@ -10,8 +10,4 @@ export function getUser(): User {
         joinedAt: "",
         addresses: []
     };
-}
-
-export function getOrders(): Order[] {
-    return [];
 }

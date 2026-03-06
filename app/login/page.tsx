@@ -69,8 +69,7 @@ export default function LoginPage() {
             } else {
                 setErrors({ server: data.error || "Invalid email or password" });
             }
-        } catch (error) {
-            console.error('Login error:', error);
+        } catch {
             setErrors({ server: "Something went wrong. Please try again." });
         } finally {
             setIsLoading(false);

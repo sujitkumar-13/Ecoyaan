@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
-import { getUser, getOrders } from "../../lib/user";
+import { getUser } from "../../lib/user";
 import {
     User as UserIcon,
     Package,
@@ -68,8 +68,8 @@ export default function ProfilePage() {
                         const ordersData = await ordersResponse.json();
                         setOrders(ordersData);
                     }
-                } catch (error) {
-                    console.error('Error fetching data:', error);
+                } catch {
+                    // Failed to load profile data
                 }
             }
             setIsLoading(false);
@@ -110,10 +110,11 @@ export default function ProfilePage() {
                 }));
                 localStorage.setItem('userEmail', updatedData.email);
             }
-        } catch (error) {
-            console.error('Error updating profile:', error);
+        } catch {
+            // Profile update failed silently
+        } finally {
+            setIsEditModalOpen(false);
         }
-        setIsEditModalOpen(false);
     };
 
     const handleSaveAddress = async (addressData: any) => {
@@ -149,8 +150,8 @@ export default function ProfilePage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, addresses: updatedAddresses })
                 });
-            } catch (error) {
-                console.error('Error persisting address:', error);
+            } catch {
+                // Address persist failed silently
             }
         }
     };
@@ -171,8 +172,8 @@ export default function ProfilePage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, addresses: updatedAddresses })
                 });
-            } catch (error) {
-                console.error('Error removing address:', error);
+            } catch {
+                // Address remove failed silently
             }
         }
     };
@@ -230,7 +231,7 @@ export default function ProfilePage() {
                         </div>
                         <div className="min-w-0">
                             <h2 className="font-bold text-stone-900 text-sm truncate">{userProfile.name}</h2>
-                            <p className="text-xs text-stone-400">Member since {userProfile.joinedAt}</p>
+                            <p className="text-xs text-stone-400">Member since {userProfile.joinedAt ? new Date(userProfile.joinedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : '—'}</p>
                         </div>
                     </div>
                     {/* Scrollable tab row */}
@@ -282,7 +283,7 @@ export default function ProfilePage() {
                             />
                         </div>
                         <h2 className="font-bold text-stone-900">{userProfile.name}</h2>
-                        <p className="text-xs text-stone-400 font-medium">Member since {userProfile.joinedAt}</p>
+                        <p className="text-xs text-stone-400 font-medium">Member since {userProfile.joinedAt ? new Date(userProfile.joinedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : '—'}</p>
                     </div>
 
                     <nav className="p-3">
@@ -392,7 +393,11 @@ export default function ProfilePage() {
                                             </div>
                                             <div className="space-y-1">
                                                 <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Date Joined</label>
-                                                <p className="font-bold text-stone-900">{userProfile.joinedAt}</p>
+                                                <p className="font-bold text-stone-900">
+                                                    {userProfile.joinedAt
+                                                        ? new Date(userProfile.joinedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
+                                                        : '—'}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>

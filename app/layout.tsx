@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 export const dynamic = "force-dynamic";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
@@ -14,14 +14,9 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
   title: "Ecoyaan",
-  description: "Sustainable eCommerce Checkout Flow",
+  description: "Shop eco-friendly and sustainable products. Browse our curated collection of vegan, zero-waste, and cruelty-free products verified by Ecoverify™.",
 };
 
 export default async function RootLayout({
@@ -34,7 +29,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className="bg-stone-50">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-stone-50 text-stone-900 flex flex-col min-h-screen pb-16 md:pb-0`}
+        className={`${geistSans.variable} antialiased bg-stone-50 text-stone-900 flex flex-col min-h-screen pb-16 md:pb-0`}
       >
         <WishlistProvider>
           <CartProvider initialData={initialCartData}>

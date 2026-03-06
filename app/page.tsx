@@ -21,8 +21,8 @@ export default function Home() {
         const response = await fetch('/api/products');
         const data = await response.json();
         setProducts(data);
-      } catch (error) {
-        console.error("Failed to fetch products:", error);
+      } catch {
+        // Products failed to load silently
       } finally {
         setIsLoading(false);
       }

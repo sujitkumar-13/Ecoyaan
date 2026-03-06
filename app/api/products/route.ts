@@ -7,12 +7,7 @@ export async function GET() {
         const db = client.db("ecoyaan");
         const products = await db.collection("products").find({}).toArray();
         return NextResponse.json(products);
-    } catch (e: any) {
-        console.error("Fetch products error details:", {
-            message: e.message,
-            stack: e.stack,
-            name: e.name
-        });
-        return NextResponse.json({ success: false, error: 'Failed to fetch products', details: e.message }, { status: 500 });
+    } catch {
+        return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
     }
 }

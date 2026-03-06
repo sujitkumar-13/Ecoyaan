@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 
-// GET /api/reviews?productId=101
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
@@ -21,13 +20,11 @@ export async function GET(request: Request) {
             .toArray();
 
         return NextResponse.json(reviews);
-    } catch (e) {
-        console.error('Error fetching reviews:', e);
+    } catch {
         return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
     }
 }
 
-// POST /api/reviews
 export async function POST(request: Request) {
     try {
         const body = await request.json();
@@ -54,8 +51,7 @@ export async function POST(request: Request) {
         const result = await db.collection('reviews').insertOne(review);
 
         return NextResponse.json({ success: true, reviewId: result.insertedId });
-    } catch (e) {
-        console.error('Error saving review:', e);
+    } catch {
         return NextResponse.json({ error: 'Failed to save review' }, { status: 500 });
     }
 }

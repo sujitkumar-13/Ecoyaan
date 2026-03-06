@@ -51,8 +51,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                         setReviews(reviewsData);
                     }
                 }
-            } catch (error) {
-                console.error("Failed to fetch product:", error);
+            } catch {
+                // Product fetch failed silently
             } finally {
                 setIsLoading(false);
             }
@@ -174,8 +174,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 if (reviewsRes.ok) setReviews(await reviewsRes.json());
                 handleCloseModal();
             }
-        } catch (e) {
-            console.error('Error submitting review:', e);
+        } catch {
+            // Review submission failed silently
         } finally {
             setIsSubmittingReview(false);
         }

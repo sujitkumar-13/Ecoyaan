@@ -15,9 +15,8 @@ export async function GET(request: Request) {
 
         const cart = await db.collection("carts").findOne({ email });
         return NextResponse.json(cart?.items || []);
-    } catch (e) {
-        console.error("Fetch cart error:", e);
-        return NextResponse.json({ success: false, error: 'Failed to fetch cart' }, { status: 500 });
+    } catch {
+        return NextResponse.json({ error: 'Failed to fetch cart' }, { status: 500 });
     }
 }
 
@@ -39,8 +38,7 @@ export async function POST(request: Request) {
         );
 
         return NextResponse.json({ success: true });
-    } catch (e) {
-        console.error("Save cart error:", e);
-        return NextResponse.json({ success: false, error: 'Failed to save cart' }, { status: 500 });
+    } catch {
+        return NextResponse.json({ error: 'Failed to save cart' }, { status: 500 });
     }
 }
