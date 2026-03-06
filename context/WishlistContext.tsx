@@ -13,30 +13,46 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         setIsMounted(true);
     }, []);
 
-    useEffect(() => {
+    const fetchWishlist = async () => {
         const email = typeof window !== 'undefined' ? localStorage.getItem('userEmail') : null;
 
         if (email) {
-            fetch(`/api/wishlist?email=${encodeURIComponent(email)}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (Array.isArray(data)) {
-                        setWishlistItems(data);
-                        localStorage.setItem('ecoyaan_wishlist', JSON.stringify(data));
-                    }
-                })
-                .catch(err => console.error("Failed to fetch wishlist", err));
+            try {
+                const res = await fetch(`/api/wishlist?email=${encodeURIComponent(email)}`);
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    setWishlistItems(data);
+                    localStorage.setItem('ecoyaan_wishlist', JSON.stringify(data));
+                }
+            } catch (err) {
+                console.error("Failed to fetch wishlist", err);
+            }
         } else {
-            // Load from local storage for guests, or clear if we want it strictly logged-in only
+            // Load from local storage for guests
             const savedWishlist = localStorage.getItem('ecoyaan_wishlist');
             if (savedWishlist) {
                 try {
                     setWishlistItems(JSON.parse(savedWishlist));
                 } catch (error) {
                     console.error("Failed to parse wishlist from local storage", error);
+                    setWishlistItems([]);
                 }
+            } else {
+                setWishlistItems([]);
             }
         }
+    };
+
+    useEffect(() => {
+        fetchWishlist();
+
+        // Listen for storage events (login/logout in other tabs/components)
+        const handleStorageChange = () => {
+            fetchWishlist();
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
     // Save to local storage and DB whenever wishlistItems changes

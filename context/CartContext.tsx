@@ -17,26 +17,39 @@ export function CartProvider({
     const [discountApplied] = useState<number>(initialData.discount_applied);
     const [shippingAddress, setShippingAddressState] = useState<ShippingAddress | null>(null);
 
+    const fetchCart = async () => {
+        const email = localStorage.getItem('userEmail');
+        if (email) {
+            try {
+                const res = await fetch(`/api/cart?email=${encodeURIComponent(email)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    // The API returns an array directly, not { cartItems: [...] }
+                    if (Array.isArray(data)) {
+                        setCartItems(data);
+                    }
+                }
+            } catch (e) {
+                console.error("Cart fetch error:", e);
+            }
+        } else {
+            setCartItems([]);
+        }
+    };
+
     // Initial fetch from database on mount (client side)
     useEffect(() => {
-        const fetchCart = async () => {
-            const email = localStorage.getItem('userEmail');
-            if (email) {
-                try {
-                    const res = await fetch(`/api/cart?email=${encodeURIComponent(email)}`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data.cartItems) setCartItems(data.cartItems);
-                    }
-                } catch (e) {
-                    console.error("Cart fetch error:", e);
-                }
-            }
-        };
         fetchCart();
+
+        // Listen for storage events (login/logout in other tabs/components)
+        const handleStorageChange = () => {
+            fetchCart();
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
-    // Helper to persist cart
     const persistCart = async (items: CartItem[]) => {
         const email = localStorage.getItem('userEmail');
         if (email) {
@@ -44,7 +57,7 @@ export function CartProvider({
                 await fetch('/api/cart', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, cartItems: items })
+                    body: JSON.stringify({ email, items: items }) // API expects "items", not "cartItems"
                 });
             } catch (e) {
                 console.error("Cart persist error:", e);
