@@ -17,8 +17,37 @@ export function Header() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
-        setIsLoggedIn(!!localStorage.getItem('userEmail'));
-    }, [pathname]);
+        const checkAuthStatus = () => {
+            const email = localStorage.getItem('userEmail');
+            const token = localStorage.getItem('token');
+            const tokenExpiry = localStorage.getItem('tokenExpiry');
+
+            if (email && token && tokenExpiry) {
+                const now = new Date().getTime();
+                if (now > parseInt(tokenExpiry)) {
+                    // Token expired, log user out
+                    localStorage.removeItem('userEmail');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('tokenExpiry');
+                    localStorage.removeItem('ecoyaan_wishlist');
+                    setIsLoggedIn(false);
+
+                    // Redirect to login if on a protected page
+                    const protectedPages = ["/profile", "/cart", "/wishlist", "/shipping", "/payment", "/success"];
+                    if (protectedPages.includes(pathname)) {
+                        router.push("/login?expired=true");
+                    }
+                } else {
+                    setIsLoggedIn(true);
+                }
+            } else {
+                setIsLoggedIn(!!email); // Fallback for pre-existing non-token sessions
+            }
+        };
+
+        checkAuthStatus();
+    }, [pathname, router]);
+
     const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
     const wishlistCount = wishlistItems.length;
 

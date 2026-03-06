@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
     try {
@@ -8,7 +9,12 @@ export async function POST(request: Request) {
         const db = client.db("ecoyaan");
 
         // We'll upsert based on email for now as a simple identifier
-        const { email, ...updateData } = body;
+        const { email, password, ...updateData } = body;
+
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            updateData.password = hashedPassword;
+        }
 
         const result = await db.collection("users").updateOne(
             { email: email },

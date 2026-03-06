@@ -2,11 +2,12 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowRight, Lock, Mail, X, Eye, EyeOff } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, ArrowRight, Lock, Mail, Eye, EyeOff, X } from "lucide-react";
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [formData, setFormData] = useState({
         email: "",
         password: ""
@@ -35,9 +36,16 @@ export default function LoginPage() {
                 body: JSON.stringify(formData)
             });
             const data = await response.json();
-            if (data.success) {
-                localStorage.setItem('userEmail', formData.email);
-                router.push("/profile");
+            if (response.ok && data.success) {
+                // Save token and email
+                localStorage.setItem('userEmail', data.email);
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    // Set expiry for 7 days (7 * 24 * 60 * 60 * 1000 ms)
+                    const expiry = new Date().getTime() + 7 * 24 * 60 * 60 * 1000;
+                    localStorage.setItem('tokenExpiry', expiry.toString());
+                }
+                router.push(searchParams.get('redirect') || "/");
             } else {
                 setErrors({ server: data.error || "Invalid credentials" });
             }
