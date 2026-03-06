@@ -143,7 +143,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     };
 
     return (
-        <div className="max-w-[1400px] mx-auto py-4 md:py-8 space-y-8">
+        <div className="max-w-[1400px] mx-auto px-4 py-4 md:py-8 pb-24 md:pb-8 space-y-6 md:space-y-8">
             {/* Breadcrumbs */}
             <nav className="flex items-center text-xs text-green-700 font-medium whitespace-nowrap overflow-x-auto pb-2">
                 <Link href="/" className="hover:underline">Home</Link>
@@ -164,22 +164,22 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
                 {/* Left: Image Gallery */}
-                <div className="w-full lg:w-1/2 flex gap-4 h-[400px] md:h-[600px] sticky top-28 z-10">
-                    {/* Thumbnails */}
-                    <div className="flex flex-col gap-3 overflow-y-auto no-scrollbar py-1 shrink-0 w-[60px] md:w-[80px]">
+                <div className="w-full lg:w-1/2 flex flex-col gap-3 lg:sticky lg:top-28">
+                    {/* Main Image */}
+                    <div className="relative w-full h-[300px] sm:h-[400px] md:h-[500px] rounded-2xl border border-gray-200 overflow-hidden bg-white">
+                        <Image src={mainImage} alt={product.name} fill className="object-contain p-4" priority />
+                    </div>
+                    {/* Thumbnails — horizontal scroll on mobile */}
+                    <div className="flex flex-row gap-2 overflow-x-auto no-scrollbar py-1">
                         {product.images?.map((img: string, idx: number) => (
                             <div
                                 key={idx}
                                 onClick={() => setMainImage(img)}
-                                className={`relative aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${mainImage === img ? 'border-green-600' : 'border-transparent hover:border-green-300'}`}
+                                className={`relative w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 cursor-pointer shrink-0 transition-all ${mainImage === img ? 'border-green-600' : 'border-transparent hover:border-green-300'}`}
                             >
                                 <Image src={img} alt={`Thumbnail ${idx}`} fill className="object-cover" />
                             </div>
                         ))}
-                    </div>
-                    {/* Main Image */}
-                    <div className="relative flex-grow rounded-2xl border border-gray-200 overflow-hidden bg-white">
-                        <Image src={mainImage} alt={product.name} fill className="object-contain p-4" priority />
                     </div>
                 </div>
 
@@ -217,7 +217,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     </div>
 
                     {/* Sustainability Badges */}
-                    <div className="mt-4 bg-[#F2FCF6] rounded-xl p-6 flex flex-col sm:flex-row items-center gap-6 sm:gap-8 border border-green-50 mb-6">
+                    <div className="mt-4 bg-[#F2FCF6] rounded-xl p-4 md:p-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-8 border border-green-50 mb-6">
                         <div className="relative w-[80px] h-[80px] flex items-center justify-center shrink-0">
                             <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
                                 <path className="text-green-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray="100, 100" />
@@ -362,14 +362,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
 
             {/* Bottom Section: About this item */}
-            <div className="pt-12 mt-12 mb-8">
+            <div className="pt-8 md:pt-12 mt-8 md:mt-12 mb-8">
                 <h2 className="text-xl font-bold text-[#1a3b2b] mb-6">About this item</h2>
                 <div className="border border-gray-200 rounded-xl overflow-hidden">
                     {product.attributes ? (
                         Object.entries(product.attributes).map(([key, value], index) => (
-                            <div key={key} className={`flex text-sm ${index % 2 === 0 ? 'bg-white' : 'bg-[#fcfdfc]'} px-6 py-4`}>
-                                <div className="w-1/3 text-gray-600 font-medium">{key}</div>
-                                <div className="w-2/3 text-gray-800">{value as React.ReactNode}</div>
+                            <div key={key} className={`flex text-sm ${index % 2 === 0 ? 'bg-white' : 'bg-[#fcfdfc]'} px-4 md:px-6 py-3 md:py-4`}>
+                                <div className="w-2/5 md:w-1/3 text-gray-600 font-medium text-xs md:text-sm">{key}</div>
+                                <div className="w-3/5 md:w-2/3 text-gray-800 text-xs md:text-sm">{value as React.ReactNode}</div>
                             </div>
                         ))
                     ) : (
