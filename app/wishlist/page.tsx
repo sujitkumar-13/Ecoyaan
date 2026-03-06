@@ -1,13 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useWishlist } from "@/context/WishlistContext";
 import { ProductCard } from "@/components/ProductCard";
 import Link from "next/link";
 import { Heart } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function WishlistPage() {
     const { wishlistItems } = useWishlist();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!localStorage.getItem('userEmail')) {
+            router.push('/register');
+        }
+    }, [router]);
 
     return (
         <div className="max-w-[1400px] mx-auto py-8">

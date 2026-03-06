@@ -7,10 +7,17 @@ import { CheckoutStepper } from "@/components/CheckoutStepper";
 import { useRouter } from "next/navigation";
 import { ShoppingBag, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import React, { useEffect } from "react";
 
 export default function CartPage() {
     const { cartItems, subtotal } = useCart();
     const router = useRouter();
+
+    useEffect(() => {
+        if (!localStorage.getItem('userEmail')) {
+            router.push('/register');
+        }
+    }, [router]);
 
     const handleCheckout = () => {
         router.push("/shipping");

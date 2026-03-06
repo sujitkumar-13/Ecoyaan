@@ -6,15 +6,23 @@ import { Product } from "@/types";
 import { ShoppingCart, Leaf, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function ProductCard({ product }: { product: Product }) {
     const { addToCart } = useCart();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+    const router = useRouter();
     const isLiked = isInWishlist(product.id);
 
     const handleLike = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (!localStorage.getItem('userEmail')) {
+            router.push('/register');
+            return;
+        }
+
         if (isLiked) {
             removeFromWishlist(product.id);
         } else {
@@ -25,6 +33,12 @@ export function ProductCard({ product }: { product: Product }) {
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (!localStorage.getItem('userEmail')) {
+            router.push('/register');
+            return;
+        }
+
         addToCart({
             product_id: product.id,
             product_name: product.name,

@@ -144,23 +144,41 @@ export function Header() {
                             </div>
                         )}
 
-                        <Link href="/wishlist" className="relative text-[#008C4A] hover:text-[#006b38]">
+                        <button
+                            onClick={() => {
+                                if (!isLoggedIn) {
+                                    router.push('/register');
+                                } else {
+                                    router.push('/wishlist');
+                                }
+                            }}
+                            className="relative text-[#008C4A] hover:text-[#006b38]"
+                        >
                             <Heart className="w-7 h-7" strokeWidth={2.5} />
                             {wishlistCount > 0 && (
                                 <span className="absolute top-0 right-0 bg-[#008C4A] text-white text-[11px] font-bold w-[20px] h-[20px] flex items-center justify-center rounded-full border-2 border-white -translate-y-2.5 translate-x-2.5">
                                     {wishlistCount}
                                 </span>
                             )}
-                        </Link>
+                        </button>
 
-                        <Link href="/cart" className="relative text-[#008C4A] hover:text-[#006b38] hidden md:flex">
+                        <button
+                            onClick={() => {
+                                if (!isLoggedIn) {
+                                    router.push('/register');
+                                } else {
+                                    router.push('/cart');
+                                }
+                            }}
+                            className="relative text-[#008C4A] hover:text-[#006b38] hidden md:flex"
+                        >
                             <ShoppingCart className="w-7 h-7" strokeWidth={2.5} />
                             {cartCount > 0 && (
                                 <span className="absolute top-0 right-0 bg-[#008C4A] text-white text-[11px] font-bold w-[20px] h-[20px] flex items-center justify-center rounded-full border-2 border-white -translate-y-2.5 translate-x-2.5">
                                     {cartCount}
                                 </span>
                             )}
-                        </Link>
+                        </button>
                     </div>
                 </div>
 

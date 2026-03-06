@@ -11,12 +11,14 @@ import {
     Minus, Plus, ShoppingBag, ShieldCheck, Star,
     X, Camera
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const product = getProductById(Number(id));
     const { addToCart } = useCart();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+    const router = useRouter();
 
     const [mainImage, setMainImage] = useState(product?.image || "");
     const [quantity, setQuantity] = useState(1);
@@ -41,6 +43,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
 
     const handleAddToCart = () => {
+        if (!localStorage.getItem('userEmail')) {
+            router.push('/register');
+            return;
+        }
         addToCart({
             product_id: product.id,
             product_name: product.name,
@@ -52,6 +58,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
     const handleLike = () => {
         if (!product) return;
+        if (!localStorage.getItem('userEmail')) {
+            router.push('/register');
+            return;
+        }
         if (isInWishlist(product.id)) {
             removeFromWishlist(product.id);
         } else {
