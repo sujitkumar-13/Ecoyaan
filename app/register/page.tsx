@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Lock, Mail, User, MapPin, Calendar, Heart, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, Mail, User, MapPin, Calendar, Heart, Eye, EyeOff, Phone } from "lucide-react";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -12,6 +12,7 @@ export default function RegisterPage() {
         age: "",
         gender: "Male",
         email: "",
+        phone: "",
         password: "",
         address: ""
     });
@@ -25,6 +26,8 @@ export default function RegisterPage() {
         if (!formData.age.trim()) newErrors.age = "Age is required";
         if (!formData.email.trim()) newErrors.email = "Email is required";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid email format";
+        if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+        else if (!/^\d{10}$/.test(formData.phone)) newErrors.phone = "Exactly 10 digits required";
         if (!formData.password) newErrors.password = "Password is required";
         else if (formData.password.length < 6) newErrors.password = "Min 6 characters required";
         if (!formData.address.trim()) newErrors.address = "Address is required";
@@ -59,10 +62,10 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFCFB] flex items-center justify-center p-4 py-12">
+        <div className=" bg-[#FDFCFB] flex items-center justify-center p-4 ">
             <div className="w-full max-w-2xl">
                 {/* Logo & Header */}
-                <div className="text-center mb-10">
+                <div className="text-center mb-4">
                     <Link href="/" className="inline-flex items-center gap-3 group mb-8">
                         <div className="w-12 h-12 rounded-full bg-[#E5F5ED] flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-[#008C4A] transform -rotate-12">
@@ -76,7 +79,7 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="bg-white p-8 md:p-12 rounded-[3rem] shadow-2xl shadow-stone-200/50 space-y-8">
+                <form onSubmit={handleSubmit} className="bg-white p-8 rounded-[3rem] shadow-2xl shadow-stone-200/50 space-y-8">
                     {errors.server && (
                         <div className="bg-red-50 text-red-500 p-4 rounded-2xl text-xs font-bold border border-red-100 flex items-center gap-2">
                             <Lock className="w-4 h-4" /> {errors.server}
@@ -93,7 +96,7 @@ export default function RegisterPage() {
                                 </div>
                                 <input
                                     type="text"
-                                    className={`w-full bg-stone-50 border-none rounded-2xl pl-14 pr-6 py-5 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.name ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                                    className={`w-full bg-stone-50 border border-stone-200 rounded-2xl pl-14 pr-6 py-5 text-sm text-stone-900 outline-none focus:ring-2 transition-all ${errors.name ? 'ring-2 ring-red-500/20 border-red-500/50' : 'focus:ring-[#008C4A]/20 focus:border-[#008C4A]/50'}`}
                                     placeholder="Sujit Kumar"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -111,13 +114,31 @@ export default function RegisterPage() {
                                 </div>
                                 <input
                                     type="email"
-                                    className={`w-full bg-stone-50 border-none rounded-2xl pl-14 pr-6 py-5 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.email ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                                    className={`w-full bg-stone-50 border border-stone-200 rounded-2xl pl-14 pr-6 py-5 text-sm text-stone-900 outline-none focus:ring-2 transition-all ${errors.email ? 'ring-2 ring-red-500/20 border-red-500/50' : 'focus:ring-[#008C4A]/20 focus:border-[#008C4A]/50'}`}
                                     placeholder="sujit@example.com"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 />
                             </div>
                             {errors.email && <p className="text-[10px] font-bold text-red-500 ml-2">{errors.email}</p>}
+                        </div>
+
+                        {/* Phone Number */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] ml-2">Phone Number</label>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                                    <Phone className="h-5 w-5 text-stone-300 group-focus-within:text-[#008C4A] transition-colors" />
+                                </div>
+                                <input
+                                    type="tel"
+                                    className={`w-full bg-stone-50 border border-stone-200 rounded-2xl pl-14 pr-6 py-5 text-sm text-stone-900 outline-none focus:ring-2 transition-all ${errors.phone ? 'ring-2 ring-red-500/20 border-red-500/50' : 'focus:ring-[#008C4A]/20 focus:border-[#008C4A]/50'}`}
+                                    placeholder="9876543210"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                                />
+                            </div>
+                            {errors.phone && <p className="text-[10px] font-bold text-red-500 ml-2">{errors.phone}</p>}
                         </div>
 
                         {/* Age */}
@@ -129,7 +150,7 @@ export default function RegisterPage() {
                                 </div>
                                 <input
                                     type="number"
-                                    className={`w-full bg-stone-50 border-none rounded-2xl pl-14 pr-6 py-5 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.age ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                                    className={`w-full bg-stone-50 border border-stone-200 rounded-2xl pl-14 pr-6 py-5 text-sm text-stone-900 outline-none focus:ring-2 transition-all ${errors.age ? 'ring-2 ring-red-500/20 border-red-500/50' : 'focus:ring-[#008C4A]/20 focus:border-[#008C4A]/50'}`}
                                     placeholder="25"
                                     value={formData.age}
                                     onChange={(e) => setFormData({ ...formData, age: e.target.value })}
@@ -141,18 +162,24 @@ export default function RegisterPage() {
                         {/* Gender */}
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] ml-2">Gender</label>
-                            <div className="flex gap-2">
-                                {["Male", "Female", "Other"].map((g) => (
-                                    <button
-                                        key={g}
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, gender: g })}
-                                        className={`flex-1 py-5 rounded-2xl text-xs font-black transition-all ${formData.gender === g ? 'bg-[#008C4A] text-white shadow-lg shadow-green-100' : 'bg-stone-50 text-stone-400 hover:bg-stone-100'}`}
-                                    >
-                                        {g}
-                                    </button>
-                                ))}
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                                    <Heart className="h-5 w-5 text-stone-300 group-focus-within:text-[#008C4A] transition-colors" />
+                                </div>
+                                <select
+                                    className={`w-full bg-stone-50 border border-stone-200 rounded-2xl pl-14 pr-6 py-5 text-sm text-stone-900 outline-none focus:ring-2 transition-all appearance-none cursor-pointer ${errors.gender ? 'ring-2 ring-red-500/20 border-red-500/50' : 'focus:ring-[#008C4A]/20 focus:border-[#008C4A]/50'}`}
+                                    value={formData.gender}
+                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                >
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <div className="absolute inset-y-0 right-0 pr-6 flex items-center pointer-events-none text-stone-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                </div>
                             </div>
+                            {errors.gender && <p className="text-[10px] font-bold text-red-500 ml-2">{errors.gender}</p>}
                         </div>
                     </div>
 
@@ -165,7 +192,7 @@ export default function RegisterPage() {
                             </div>
                             <input
                                 type={showPassword ? "text" : "password"}
-                                className={`w-full bg-stone-50 border-none rounded-2xl pl-14 pr-14 py-5 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.password ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                                className={`w-full bg-stone-50 border border-stone-200 rounded-2xl pl-14 pr-14 py-5 text-sm text-stone-900 outline-none focus:ring-2 transition-all ${errors.password ? 'ring-2 ring-red-500/20 border-red-500/50' : 'focus:ring-[#008C4A]/20 focus:border-[#008C4A]/50'}`}
                                 placeholder="••••••••"
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -189,7 +216,7 @@ export default function RegisterPage() {
                                 <MapPin className="h-5 w-5 text-stone-300 group-focus-within:text-[#008C4A] transition-colors" />
                             </div>
                             <textarea
-                                className={`w-full bg-stone-50 border-none rounded-[2rem] pl-14 pr-6 py-5 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all min-h-[120px] resize-none ${errors.address ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                                className={`w-full bg-stone-50 border border-stone-200 rounded-[2rem] pl-14 pr-6 py-5 text-sm text-stone-900 outline-none focus:ring-2 transition-all min-h-[120px] resize-none ${errors.address ? 'ring-2 ring-red-500/20 border-red-500/50' : 'focus:ring-[#008C4A]/20 focus:border-[#008C4A]/50'}`}
                                 placeholder="House No, Street, City, State, PIN..."
                                 value={formData.address}
                                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -212,10 +239,6 @@ export default function RegisterPage() {
                         </p>
                     </div>
                 </form>
-
-                <Link href="/" className="inline-flex items-center gap-2 text-xs font-black text-stone-400 hover:text-stone-900 transition-colors mt-8 ml-4 group">
-                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Store
-                </Link>
             </div>
         </div>
     );

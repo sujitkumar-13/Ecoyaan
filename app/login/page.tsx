@@ -50,10 +50,10 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFCFB] flex items-center justify-center p-4">
+        <div className=" bg-[#FDFCFB] flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 {/* Logo & Header */}
-                <div className="text-center mb-10">
+                <div className="text-center mb-2">
                     <Link href="/" className="inline-flex items-center gap-3 group mb-8">
                         <div className="w-12 h-12 rounded-full bg-[#E5F5ED] flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-[#008C4A] transform -rotate-12">
@@ -82,7 +82,7 @@ export default function LoginPage() {
                             </div>
                             <input
                                 type="email"
-                                className={`w-full bg-stone-50 border-none rounded-2xl pl-14 pr-6 py-5 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.email ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                                className={`w-full bg-stone-50 border border-stone-200 rounded-2xl pl-14 pr-6 py-5 text-sm text-stone-900 outline-none focus:ring-2 transition-all ${errors.email ? 'ring-2 ring-red-500/20 border-red-500/50' : 'focus:ring-[#008C4A]/20 focus:border-[#008C4A]/50'}`}
                                 placeholder="name@company.com"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -102,7 +102,7 @@ export default function LoginPage() {
                             </div>
                             <input
                                 type={showPassword ? "text" : "password"}
-                                className={`w-full bg-stone-50 border-none rounded-2xl pl-14 pr-14 py-5 text-sm font-bold text-stone-900 outline-none focus:ring-2 transition-all ${errors.password ? 'ring-2 ring-red-500/20' : 'focus:ring-[#008C4A]/20'}`}
+                                className={`w-full bg-stone-50 border border-stone-200 rounded-2xl pl-14 pr-14 py-5 text-sm text-stone-900 outline-none focus:ring-2 transition-all ${errors.password ? 'ring-2 ring-red-500/20 border-red-500/50' : 'focus:ring-[#008C4A]/20 focus:border-[#008C4A]/50'}`}
                                 placeholder="••••••••"
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -128,7 +128,7 @@ export default function LoginPage() {
 
                     <div className="text-center pt-4">
                         <p className="text-xs text-stone-400 font-bold">
-                            Don't have an account? <Link href="/" className="text-[#008C4A] hover:underline">Register here</Link>
+                            Don't have an account? <Link href="/register" className="text-[#008C4A] hover:underline">Register here</Link>
                         </p>
                     </div>
                 </form>
