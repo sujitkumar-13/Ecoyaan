@@ -19,7 +19,7 @@ export function OrderSummary({
     const formatPrice = (price: number) => `₹${price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
     return (
-        <div className="bg-white p-5 md:p-8 rounded-2xl shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col gap-6 sticky top-28 overflow-hidden">
+        <div className="bg-white p-5 md:p-8 rounded-2xl shadow-xl shadow-stone-200/50 border border-stone-100 flex flex-col gap-6 lg:sticky lg:top-28 overflow-hidden relative">
             {/* Subtle background decoration */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-full -mr-16 -mt-16 opacity-50 z-0" />
 

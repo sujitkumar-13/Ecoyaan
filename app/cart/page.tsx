@@ -34,17 +34,17 @@ export default function CartPage() {
     if (cartItems.length === 0) {
         return (
             <div className="max-w-[1400px] mx-auto px-4 py-20 animate-in fade-in duration-700">
-                <div className="flex flex-col items-center justify-center text-center space-y-8 bg-stone-50/50 p-12 md:p-20 rounded-[3rem] border border-stone-100">
-                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl shadow-stone-200">
-                        <ShoppingBag className="w-10 h-10 text-stone-300" strokeWidth={1.5} />
+                <div className="flex flex-col items-center justify-center text-center space-y-6 md:space-y-8 bg-stone-50/50 p-8 md:p-20 rounded-[2rem] md:rounded-[3rem] border border-stone-100">
+                    <div className="w-20 h-20 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center shadow-xl shadow-stone-200">
+                        <ShoppingBag className="w-8 h-8 md:w-10 md:h-10 text-stone-300" strokeWidth={1.5} />
                     </div>
-                    <div className="space-y-4 max-w-md">
-                        <h2 className="text-3xl font-black text-stone-900">Your cart is empty</h2>
-                        <p className="text-stone-500 font-medium">Looks like you haven&apos;t added any sustainable goods yet. Let&apos;s change that!</p>
+                    <div className="space-y-3 max-w-md">
+                        <h2 className="text-2xl md:text-3xl font-black text-stone-900">Your cart is empty</h2>
+                        <p className="text-stone-500 font-medium text-sm md:text-base">Looks like you haven&apos;t added any sustainable goods yet. Let&apos;s change that!</p>
                     </div>
                     <Link
                         href="/"
-                        className="bg-stone-900 text-white px-10 py-4 rounded-2xl font-black hover:bg-black transition-all active:scale-95 shadow-xl shadow-stone-200"
+                        className="bg-stone-900 text-white px-8 md:px-10 py-3 md:py-4 rounded-2xl font-black hover:bg-black transition-all active:scale-95 shadow-xl shadow-stone-200 text-sm md:text-base"
                     >
                         Start Shopping
                     </Link>
@@ -54,7 +54,7 @@ export default function CartPage() {
     }
 
     return (
-        <div className="max-w-[1400px] mx-auto px-4 md:px-0 py-6 animate-in fade-in duration-500">
+        <div className="max-w-[1400px] mx-auto px-4 py-4 md:py-6 pb-24 md:pb-6 animate-in fade-in duration-500">
             <CheckoutStepper currentStep={1} />
 
             <div className="flex flex-col lg:flex-row gap-10 xl:gap-16 items-start">
@@ -72,7 +72,7 @@ export default function CartPage() {
                     </div>
                 </div>
 
-                <aside className="w-full lg:w-[420px] shrink-0 sticky top-28">
+                <aside className="w-full lg:w-[420px] shrink-0 lg:sticky lg:top-28">
                     <OrderSummary
                         buttonText="Proceed to Shipping"
                         onButtonClick={handleCheckout}

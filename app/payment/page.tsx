@@ -65,7 +65,7 @@ export default function PaymentPage() {
     };
 
     return (
-        <div className="max-w-[1400px] mx-auto px-4 md:px-0 py-6 animate-in fade-in duration-500">
+        <div className="max-w-[1400px] mx-auto px-4 py-4 md:py-6 pb-24 md:pb-6 animate-in fade-in duration-500">
             <CheckoutStepper currentStep={3} />
 
             <div className="flex flex-col lg:flex-row gap-10 xl:gap-16 items-start">
