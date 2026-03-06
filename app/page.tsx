@@ -2,19 +2,33 @@
 
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
-import { getProducts } from "@/lib/products";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const products = getProducts();
+  const [products, setProducts] = useState<any[]>([]);
   const { cartItems } = useCart();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setIsLoggedIn(!!localStorage.getItem('userEmail'));
+
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        setProducts(data);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
   const cartCount = isLoggedIn ? cartItems.reduce((total, item) => total + item.quantity, 0) : 0;
@@ -110,9 +124,25 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 min-h-[400px]">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+            {isLoading ? (
+              <div className="col-span-full flex justify-center items-center">
+                <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+              </div>
+            ) : Array.isArray(products) && products.length > 0 ? (
+              products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))
+            ) : (
+              <div className="col-span-full flex flex-col justify-center items-center py-12 px-4 bg-white rounded-3xl border border-stone-100 shadow-sm">
+                <p className="text-stone-500 font-medium mb-4">No products found or failed to load.</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-bold text-sm"
+                >
+                  Retry Loading
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>

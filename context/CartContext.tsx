@@ -13,41 +13,79 @@ export function CartProvider({
     initialData: CartData;
 }) {
     const [cartItems, setCartItems] = useState<CartItem[]>(initialData.cartItems);
-    const [shippingFee, setShippingFee] = useState<number>(initialData.shipping_fee);
-    const [discountApplied, setDiscountApplied] = useState<number>(initialData.discount_applied);
+    const [shippingFee] = useState<number>(initialData.shipping_fee);
+    const [discountApplied] = useState<number>(initialData.discount_applied);
     const [shippingAddress, setShippingAddressState] = useState<ShippingAddress | null>(null);
 
-    // Sync with initialData if it changes from server (optional but good practice)
+    // Initial fetch from database on mount (client side)
     useEffect(() => {
-        setCartItems(initialData.cartItems);
-        setShippingFee(initialData.shipping_fee);
-        setDiscountApplied(initialData.discount_applied);
-    }, [initialData]);
+        const fetchCart = async () => {
+            const email = localStorage.getItem('userEmail');
+            if (email) {
+                try {
+                    const res = await fetch(`/api/cart?email=${encodeURIComponent(email)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.cartItems) setCartItems(data.cartItems);
+                    }
+                } catch (e) {
+                    console.error("Cart fetch error:", e);
+                }
+            }
+        };
+        fetchCart();
+    }, []);
+
+    // Helper to persist cart
+    const persistCart = async (items: CartItem[]) => {
+        const email = localStorage.getItem('userEmail');
+        if (email) {
+            try {
+                await fetch('/api/cart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, cartItems: items })
+                });
+            } catch (e) {
+                console.error("Cart persist error:", e);
+            }
+        }
+    };
 
     const addToCart = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
         setCartItems(prev => {
+            let newItems;
             const existing = prev.find(i => i.product_id === item.product_id);
             if (existing) {
-                return prev.map(i =>
+                newItems = prev.map(i =>
                     i.product_id === item.product_id
                         ? { ...i, quantity: i.quantity + (item.quantity || 1) }
                         : i
                 );
+            } else {
+                newItems = [...prev, { ...item, quantity: item.quantity || 1 }];
             }
-            return [...prev, { ...item, quantity: item.quantity || 1 }];
+            persistCart(newItems);
+            return newItems;
         });
     };
 
     const updateQuantity = (id: number, quantity: number) => {
-        setCartItems((prev) =>
-            prev.map((item) =>
+        setCartItems((prev) => {
+            const newItems = prev.map((item) =>
                 item.product_id === id ? { ...item, quantity: Math.max(1, quantity) } : item
-            )
-        );
+            );
+            persistCart(newItems);
+            return newItems;
+        });
     };
 
     const removeItem = (id: number) => {
-        setCartItems((prev) => prev.filter((item) => item.product_id !== id));
+        setCartItems((prev) => {
+            const newItems = prev.filter((item) => item.product_id !== id);
+            persistCart(newItems);
+            return newItems;
+        });
     };
 
     const setShippingAddress = (address: ShippingAddress) => {
@@ -57,6 +95,7 @@ export function CartProvider({
     const clearCart = () => {
         setCartItems([]);
         setShippingAddressState(null);
+        persistCart([]);
     };
 
     const subtotal = cartItems.reduce(

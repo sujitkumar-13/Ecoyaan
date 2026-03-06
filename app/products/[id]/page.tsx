@@ -3,7 +3,6 @@
 import React, { use, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductById } from "@/lib/products";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import {
@@ -15,14 +14,15 @@ import { useRouter } from "next/navigation";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    const product = getProductById(Number(id));
+    const [product, setProduct] = useState<any>(null);
     const { addToCart } = useCart();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const router = useRouter();
 
-    const [mainImage, setMainImage] = useState(product?.image || "");
+    const [mainImage, setMainImage] = useState("");
     const [quantity, setQuantity] = useState(1);
-    const [openAccordions, setOpenAccordions] = useState<string[]>(["why-loves-it"]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [openAccordions, setOpenAccordions] = useState<string[]>(["why-loves-it", "about-product"]);
     const [pincode, setPincode] = useState("");
     const [shareTooltip, setShareTooltip] = useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -32,6 +32,34 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     const [reviewComment, setReviewComment] = useState("");
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+    React.useEffect(() => {
+        const fetchProduct = async () => {
+            try {
+                const response = await fetch('/api/products');
+                const products = await response.json();
+                const foundProduct = products.find((p: any) => p.id === Number(id));
+                if (foundProduct) {
+                    setProduct(foundProduct);
+                    setMainImage(foundProduct.image);
+                }
+            } catch (error) {
+                console.error("Failed to fetch product:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProduct();
+    }, [id]);
+
+    if (isLoading) {
+        return (
+            <div className="max-w-[1400px] mx-auto min-h-[50vh] flex flex-col items-center justify-center">
+                <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+                <p className="mt-4 text-stone-500 font-medium">Loading product details...</p>
+            </div>
+        );
+    }
 
     if (!product) {
         return (
@@ -121,7 +149,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <Link href="/" className="hover:underline">Home</Link>
                 <ChevronRight className="w-3 h-3 mx-1 flex-shrink-0 text-gray-400" />
                 {product.categoryPath ? (
-                    product.categoryPath.map((cat, index) => (
+                    product.categoryPath.map((cat: string, index: number) => (
                         <React.Fragment key={index}>
                             <Link href="#" className="hover:underline">{cat}</Link>
                             {index !== product.categoryPath!.length - 1 && (
@@ -139,7 +167,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <div className="w-full lg:w-1/2 flex gap-4 h-[400px] md:h-[600px] sticky top-28 z-10">
                     {/* Thumbnails */}
                     <div className="flex flex-col gap-3 overflow-y-auto no-scrollbar py-1 shrink-0 w-[60px] md:w-[80px]">
-                        {product.images?.map((img, idx) => (
+                        {product.images?.map((img: string, idx: number) => (
                             <div
                                 key={idx}
                                 onClick={() => setMainImage(img)}
@@ -204,7 +232,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                             <h3 className="text-lg font-bold text-gray-900 mb-1">Sustainability Badges</h3>
                             <p className="text-sm text-gray-500 mb-4">AI-verified product claims</p>
                             <div className="flex flex-wrap gap-2.5">
-                                {product.badges?.map((badge, idx) => (
+                                {product.badges?.map((badge: string, idx: number) => (
                                     <div key={idx} className="flex items-center gap-2 px-4 py-1.5 bg-white border border-green-200 rounded-full text-sm font-medium text-green-800 shadow-sm">
                                         <Leaf className="w-4 h-4 text-green-600" />
                                         {badge}
@@ -341,7 +369,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                         Object.entries(product.attributes).map(([key, value], index) => (
                             <div key={key} className={`flex text-sm ${index % 2 === 0 ? 'bg-white' : 'bg-[#fcfdfc]'} px-6 py-4`}>
                                 <div className="w-1/3 text-gray-600 font-medium">{key}</div>
-                                <div className="w-2/3 text-gray-800">{value}</div>
+                                <div className="w-2/3 text-gray-800">{value as React.ReactNode}</div>
                             </div>
                         ))
                     ) : (

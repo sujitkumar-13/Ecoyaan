@@ -11,6 +11,9 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
         const email = typeof window !== 'undefined' ? localStorage.getItem('userEmail') : null;
 
         if (email) {
