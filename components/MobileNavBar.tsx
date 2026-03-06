@@ -22,13 +22,6 @@ export function MobileNavBar() {
                 <span className="text-[11px] font-medium">Home</span>
             </Link>
 
-            <Link
-                href="/categories"
-                className={`flex flex-col items-center gap-1 ${isActive('/categories') ? 'text-[#008C4A]' : 'text-gray-500 hover:text-gray-900'}`}
-            >
-                <Menu className="w-[26px] h-[26px]" strokeWidth={isActive('/categories') ? 2.5 : 2} />
-                <span className="text-[11px] font-medium">Categories</span>
-            </Link>
 
             <Link
                 href="/profile"

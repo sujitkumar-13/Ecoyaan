@@ -132,15 +132,6 @@ export function Header() {
                         </div>
                     </Link>
 
-                    {/* Location Section */}
-                    <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
-                        <MapPin className="w-6 h-6 text-[#008C4A]" />
-                        <div className="flex flex-col">
-                            <span className="text-[15px] font-semibold text-gray-800 leading-tight">New Delhi, 110001</span>
-                            <span className="text-[12px] font-medium text-[#7D5A9C] cursor-pointer hover:underline pt-0.5">Update Location</span>
-                        </div>
-                    </div>
-
                     {/* Search Bar */}
                     <div className="flex-grow hidden md:block max-w-[700px] w-full">
                         <div className="relative w-full">
