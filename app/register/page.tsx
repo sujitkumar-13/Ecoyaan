@@ -62,24 +62,24 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className=" bg-[#FDFCFB] flex items-center justify-center p-4 ">
+        <div className="bg-[#FDFCFB] flex items-center justify-center p-4 min-h-[calc(100vh-145px)] md:min-h-[calc(100vh-96px)]">
             <div className="w-full max-w-2xl">
                 {/* Logo & Header */}
-                <div className="text-center mb-4">
-                    <Link href="/" className="inline-flex items-center gap-3 group mb-8">
-                        <div className="w-12 h-12 rounded-full bg-[#E5F5ED] flex items-center justify-center">
+                <div className="text-center mb-6 md:mb-10">
+                    <Link href="/" className="inline-flex items-center gap-3 group mb-6 md:mb-8">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#E5F5ED] flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-[#008C4A] transform -rotate-12">
                                 <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
                             </svg>
                         </div>
-                        <span className="text-3xl font-black text-[#008C4A] tracking-tighter">Ecoyaan</span>
+                        <span className="text-2xl md:text-3xl font-black text-[#008C4A] tracking-tighter">Ecoyaan</span>
                     </Link>
-                    <h1 className="text-4xl font-black text-stone-900 tracking-tight mb-2">Create Account</h1>
-                    <p className="text-stone-400 font-medium">Join our community of eco-conscious shoppers.</p>
+                    <h1 className="text-3xl md:text-4xl font-black text-stone-900 tracking-tight mb-2">Create Account</h1>
+                    <p className="text-sm md:text-base text-stone-400 font-medium px-4">Join our community of eco-conscious shoppers.</p>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="bg-white p-8 rounded-[3rem] shadow-2xl shadow-stone-200/50 space-y-8">
+                <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl shadow-stone-200/50 space-y-6 md:space-y-8">
                     {errors.server && (
                         <div className="bg-red-50 text-red-500 p-4 rounded-2xl text-xs font-bold border border-red-100 flex items-center gap-2">
                             <Lock className="w-4 h-4" /> {errors.server}
@@ -216,7 +216,7 @@ export default function RegisterPage() {
                                 <MapPin className="h-5 w-5 text-stone-300 group-focus-within:text-[#008C4A] transition-colors" />
                             </div>
                             <textarea
-                                className={`w-full bg-stone-50 border border-stone-200 rounded-[2rem] pl-14 pr-6 py-5 text-sm text-stone-900 outline-none focus:ring-2 transition-all min-h-[120px] resize-none ${errors.address ? 'ring-2 ring-red-500/20 border-red-500/50' : 'focus:ring-[#008C4A]/20 focus:border-[#008C4A]/50'}`}
+                                className={`w-full bg-stone-50 border border-stone-200 rounded-2xl md:rounded-[2rem] pl-14 pr-6 py-5 text-sm text-stone-900 outline-none focus:ring-2 transition-all min-h-[120px] resize-none ${errors.address ? 'ring-2 ring-red-500/20 border-red-500/50' : 'focus:ring-[#008C4A]/20 focus:border-[#008C4A]/50'}`}
                                 placeholder="House No, Street, City, State, PIN..."
                                 value={formData.address}
                                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -228,7 +228,7 @@ export default function RegisterPage() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-[#008C4A] text-white py-6 rounded-[2rem] font-black text-sm hover:bg-[#006b38] transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-100 uppercase tracking-widest disabled:opacity-50"
+                        className="w-full bg-[#008C4A] text-white py-5 md:py-6 rounded-2xl md:rounded-[2rem] font-black text-sm hover:bg-[#006b38] transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-100 uppercase tracking-widest disabled:opacity-50"
                     >
                         {isLoading ? "Creating Account..." : "Join Now"} <ArrowRight className="w-5 h-5" />
                     </button>

@@ -78,20 +78,20 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="bg-[#FDFCFB] flex items-center justify-center p-4">
+        <div className="bg-[#FDFCFB] flex items-center justify-center p-4 min-h-[calc(100vh-145px)] md:min-h-[calc(100vh-96px)]">
             <div className="w-full max-w-md">
                 {/* Logo & Header */}
-                <div className="text-center mb-2">
-                    <Link href="/" className="inline-flex items-center gap-3 group mb-8">
-                        <div className="w-12 h-12 rounded-full bg-[#E5F5ED] flex items-center justify-center">
+                <div className="text-center mb-6 md:mb-10">
+                    <Link href="/" className="inline-flex items-center gap-3 group mb-6 md:mb-8">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#E5F5ED] flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-[#008C4A] transform -rotate-12">
                                 <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
                             </svg>
                         </div>
-                        <span className="text-3xl font-black text-[#008C4A] tracking-tighter">Ecoyaan</span>
+                        <span className="text-2xl md:text-3xl font-black text-[#008C4A] tracking-tighter">Ecoyaan</span>
                     </Link>
-                    <h1 className="text-4xl font-black text-stone-900 tracking-tight mb-2">Welcome Back</h1>
-                    <p className="text-stone-400 font-medium">Continue your sustainable journey.</p>
+                    <h1 className="text-3xl md:text-4xl font-black text-stone-900 tracking-tight mb-2">Welcome Back</h1>
+                    <p className="text-sm md:text-base text-stone-400 font-medium px-4">Continue your sustainable journey.</p>
                 </div>
 
                 {/* Status Messages */}
@@ -108,7 +108,7 @@ export default function LoginPage() {
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="bg-white p-8 rounded-[3rem] shadow-2xl shadow-stone-200/50 space-y-6">
+                <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-stone-200/50 space-y-5 md:space-y-6">
                     {/* Email Address */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] ml-2">Email Address</label>
@@ -158,7 +158,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-[#008C4A] text-white py-6 rounded-[2rem] font-black text-sm hover:bg-[#006b38] transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-100 uppercase tracking-widest disabled:opacity-50"
+                        className="w-full bg-[#008C4A] text-white py-5 md:py-6 rounded-2xl md:rounded-[2rem] font-black text-sm hover:bg-[#006b38] transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-100 uppercase tracking-widest disabled:opacity-50"
                     >
                         {isLoading ? "Signing In..." : "Sign In"} <ArrowRight className="w-5 h-5" />
                     </button>
