@@ -218,7 +218,13 @@ export default function ProfilePage() {
                                 {tab.id === "orders" && <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full ${activeTab === tab.id ? "bg-white/20 text-white" : "bg-stone-100 text-stone-500"}`}>{orders.length}</span>}
                             </button>
                         ))}
-                        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all mt-4">
+                        <button
+                            onClick={() => {
+                                localStorage.removeItem('userEmail');
+                                router.push("/");
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all mt-4"
+                        >
                             <LogOut className="w-5 h-5" />
                             Sign Out
                         </button>
