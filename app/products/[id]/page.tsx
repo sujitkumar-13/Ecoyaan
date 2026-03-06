@@ -32,6 +32,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     const [reviewComment, setReviewComment] = useState("");
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+    const [reviews, setReviews] = useState<any[]>([]);
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
     React.useEffect(() => {
         const fetchProduct = async () => {
@@ -42,6 +44,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 if (foundProduct) {
                     setProduct(foundProduct);
                     setMainImage(foundProduct.image);
+                    // Fetch reviews for this product
+                    const reviewsRes = await fetch(`/api/reviews?productId=${foundProduct.id}`);
+                    if (reviewsRes.ok) {
+                        const reviewsData = await reviewsRes.json();
+                        setReviews(reviewsData);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch product:", error);
@@ -141,6 +149,48 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         previewUrls.forEach(url => URL.revokeObjectURL(url));
         setPreviewUrls([]);
     };
+
+    const handleSubmitReview = async () => {
+        if (!rating || !reviewTitle || !reviewComment) return;
+        setIsSubmittingReview(true);
+        try {
+            const userEmail = localStorage.getItem('userEmail') || 'anonymous';
+            const userName = userEmail.split('@')[0];
+            const res = await fetch('/api/reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productId: product.id,
+                    userEmail,
+                    userName,
+                    rating,
+                    title: reviewTitle,
+                    comment: reviewComment,
+                }),
+            });
+            if (res.ok) {
+                // Refresh reviews
+                const reviewsRes = await fetch(`/api/reviews?productId=${product.id}`);
+                if (reviewsRes.ok) setReviews(await reviewsRes.json());
+                handleCloseModal();
+            }
+        } catch (e) {
+            console.error('Error submitting review:', e);
+        } finally {
+            setIsSubmittingReview(false);
+        }
+    };
+
+    // Compute rating breakdown from real reviews
+    const totalReviews = reviews.length;
+    const avgRating = totalReviews > 0
+        ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1)
+        : '0.0';
+    const starCounts = [5, 4, 3, 2, 1].map(star => ({
+        star,
+        count: reviews.filter(r => r.rating === star).length,
+        pct: totalReviews > 0 ? Math.round((reviews.filter(r => r.rating === star).length / totalReviews) * 100) : 0,
+    }));
 
     return (
         <div className="max-w-[1400px] mx-auto px-4 py-4 md:py-8 pb-24 md:pb-8 space-y-6 md:space-y-8">
@@ -380,53 +430,74 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Bottom Section: Ratings and Reviews */}
             <div className="py-8 border-t border-gray-200">
-                <div className="flex flex-col md:flex-row gap-12">
+                <div className="flex flex-col md:flex-row gap-8 md:gap-12">
                     {/* Left: Rating Breakdown */}
                     <div className="w-full md:w-1/3 shrink-0">
                         <button
                             onClick={() => setIsReviewModalOpen(true)}
-                            className="w-full md:w-auto px-6 py-2 border border-green-600 text-green-700 rounded-lg font-medium text-sm hover:bg-green-50 mb-8 transition-colors"
+                            className="w-full md:w-auto px-6 py-2 border border-green-600 text-green-700 rounded-lg font-medium text-sm hover:bg-green-50 mb-6 transition-colors"
                         >
                             Write a Review
                         </button>
 
-                        <h3 className="font-bold text-[#1a3b2b] mb-4 text-[15px]">Rating Breakdown</h3>
-
-                        <div className="space-y-2 mb-6 text-sm">
-                            {[5, 4, 3, 2, 1].map((star) => (
-                                <div key={star} className="flex items-center gap-3">
-                                    <span className="w-12 text-gray-600 text-xs">{star} star</span>
-                                    <div className="flex-grow h-2 bg-gray-100 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full ${star === 5 ? 'bg-green-600' : 'bg-transparent'}`}
-                                            style={{ width: star === 5 ? '100%' : '0%' }}
-                                        />
-                                    </div>
-                                    <span className="w-10 text-right text-gray-500 text-xs">{star === 5 ? '100%' : '0%'}</span>
+                        {totalReviews > 0 && (
+                            <>
+                                <div className="flex items-baseline gap-2 mb-4">
+                                    <span className="text-4xl font-black text-stone-900">{avgRating}</span>
+                                    <span className="text-stone-400 text-sm">/ 5</span>
                                 </div>
-                            ))}
-                        </div>
-                        <p className="text-xs text-gray-500">1 global ratings</p>
+                                <h3 className="font-bold text-[#1a3b2b] mb-4 text-[15px]">Rating Breakdown</h3>
+                                <div className="space-y-2 mb-4 text-sm">
+                                    {starCounts.map(({ star, pct }) => (
+                                        <div key={star} className="flex items-center gap-3">
+                                            <span className="w-12 text-gray-600 text-xs">{star} star</span>
+                                            <div className="flex-grow h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-green-500 transition-all duration-500"
+                                                    style={{ width: `${pct}%` }}
+                                                />
+                                            </div>
+                                            <span className="w-10 text-right text-gray-500 text-xs">{pct}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-gray-500">{totalReviews} {totalReviews === 1 ? 'rating' : 'ratings'}</p>
+                            </>
+                        )}
                     </div>
 
                     {/* Right: Individual Reviews */}
                     <div className="w-full md:w-2/3">
-                        <div className="border border-green-50 rounded-2xl p-6 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="w-10 h-10 bg-green-700 rounded-full flex items-center justify-center text-white font-bold">
-                                    <UserIcon />
-                                </div>
-                                <div>
-                                    <span className="font-bold text-gray-900 block text-sm">Sss</span>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex text-green-600">
-                                            {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
-                                        </div>
-                                        <span className="text-[10px] text-gray-400">5/28/2025</span>
-                                    </div>
-                                </div>
+                        {reviews.length === 0 ? (
+                            <div className="bg-stone-50 rounded-2xl p-8 text-center">
+                                <p className="text-stone-400 font-medium">No reviews yet. Be the first to review!</p>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {reviews.map((review: any, idx: number) => (
+                                    <div key={idx} className="border border-green-50 rounded-2xl p-5 bg-white shadow-sm">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-9 h-9 bg-green-700 rounded-full flex items-center justify-center text-white font-bold text-sm uppercase shrink-0">
+                                                {review.userName?.[0] || '?'}
+                                            </div>
+                                            <div>
+                                                <span className="font-bold text-gray-900 block text-sm capitalize">{review.userName}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex text-green-600">
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'fill-current' : 'text-gray-200'}`} />
+                                                        ))}
+                                                    </div>
+                                                    <span className="text-[10px] text-gray-400">{review.date}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p className="font-semibold text-sm text-gray-800 mb-1">{review.title}</p>
+                                        <p className="text-sm text-gray-600 leading-relaxed">{review.comment}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -543,14 +614,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                                 )}
                             </div>
 
-                            {/* Submit Button aligned to right */}
+                            {/* Submit Button */}
                             <div className="flex justify-end">
                                 <button
-                                    onClick={handleCloseModal}
-                                    disabled={rating === 0 || !reviewTitle || !reviewComment}
-                                    className="px-6 py-2.5 bg-[#00A859] text-white rounded font-medium text-[15px] hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    onClick={handleSubmitReview}
+                                    disabled={rating === 0 || !reviewTitle || !reviewComment || isSubmittingReview}
+                                    className="px-6 py-2.5 bg-[#00A859] text-white rounded font-medium text-[15px] hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
-                                    Submit Review
+                                    {isSubmittingReview ? (
+                                        <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Submitting...</>
+                                    ) : 'Submit Review'}
                                 </button>
                             </div>
                         </div>
