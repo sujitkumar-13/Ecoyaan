@@ -1,38 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Home, Menu, User, ShoppingCart } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export function MobileNavBar() {
     const pathname = usePathname();
+    const router = useRouter();
     const { cartItems } = useCart();
     const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
     const isActive = (path: string) => pathname === path;
 
+    const handleNav = (path: string) => {
+        const userEmail = localStorage.getItem('userEmail');
+        if (!userEmail && (path === '/profile' || path === '/cart' || path === '/wishlist')) {
+            router.push('/register');
+        } else {
+            router.push(path);
+        }
+    };
+
     return (
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-6 z-50 flex items-center justify-between pb-safe">
-            <Link
-                href="/"
+            <button
+                onClick={() => handleNav('/')}
                 className={`flex flex-col items-center gap-1 ${isActive('/') ? 'text-[#008C4A]' : 'text-gray-500 hover:text-gray-900'}`}
             >
                 <Home className="w-[26px] h-[26px]" strokeWidth={isActive('/') ? 2.5 : 2} />
                 <span className="text-[11px] font-medium">Home</span>
-            </Link>
+            </button>
 
-
-            <Link
-                href="/profile"
+            <button
+                onClick={() => handleNav('/profile')}
                 className={`flex flex-col items-center gap-1 ${isActive('/profile') ? 'text-[#008C4A]' : 'text-gray-500 hover:text-gray-900'}`}
             >
                 <User className="w-[26px] h-[26px]" strokeWidth={isActive('/profile') ? 2.5 : 2} />
                 <span className="text-[11px] font-medium">Profile</span>
-            </Link>
+            </button>
 
-            <Link
-                href="/cart"
+            <button
+                onClick={() => handleNav('/cart')}
                 className={`relative flex flex-col items-center gap-1 ${isActive('/cart') ? 'text-[#008C4A]' : 'text-gray-500 hover:text-gray-900'}`}
             >
                 <div className="relative">
@@ -44,7 +53,7 @@ export function MobileNavBar() {
                     )}
                 </div>
                 <span className="text-[11px] font-medium">Cart</span>
-            </Link>
+            </button>
         </div>
     );
 }
